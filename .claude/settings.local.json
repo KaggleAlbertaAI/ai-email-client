@@ -15,7 +15,14 @@
       "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm;$env:Path\"; npx next dev 2>&1)",
       "PowerShell(gh *)",
       "PowerShell(Test-Path *)",
-      "PowerShell(& \"C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe\" --version)"
+      "PowerShell(& \"C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe\" --version)",
+      "PowerShell($gitZipUrl = \"https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/PortableGit-2.47.1-64-bit.7z.exe\"; $dest = \"$env:TEMP\\\\PortableGit.7z.exe\"; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri $gitZipUrl -OutFile $dest -UseBasicParsing; Write-Host \"Downloaded to: $dest\")",
+      "PowerShell(scoop *)",
+      "PowerShell(git *)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\Git\\\\cmd;C:\\\\Program Files\\\\Git\\\\bin;$env:Path\"; git remote -v ; git status)",
+      "PowerShell(git add *)",
+      "PowerShell(git log *)",
+      "PowerShell(git remote *)"
     ]
   }
 }
