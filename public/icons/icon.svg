@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+
+  <!-- Envelope body -->
+  <rect x="106" y="176" width="300" height="200" rx="16" fill="url(#accent)" opacity="0.9"/>
+
+  <!-- Envelope flap (top triangle) -->
+  <polygon points="106,176 256,296 406,176" fill="#4f46e5" opacity="0.7"/>
+
+  <!-- AI sparkle dots -->
+  <circle cx="256" cy="120" r="12" fill="#fbbf24"/>
+  <circle cx="200" cy="100" r="6" fill="#fbbf24" opacity="0.6"/>
+  <circle cx="312" cy="108" r="8" fill="#fbbf24" opacity="0.8"/>
+
+  <!-- AI text on envelope -->
+  <text x="256" y="290" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif"
+        font-size="56" font-weight="800" fill="white" letter-spacing="4">AI</text>
+</svg>

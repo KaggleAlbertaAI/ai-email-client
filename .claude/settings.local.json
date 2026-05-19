@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pnpm list *)",
+      "PowerShell(npm list *)",
+      "PowerShell(npx --no-install npm list clsx tailwind-merge 2>&1)",
+      "PowerShell(winget *)",
+      "PowerShell(timeout *)",
+      "PowerShell(npm *)",
+      "PowerShell(npm install *)",
+      "PowerShell(pnpm install *)",
+      "PowerShell(pnpm *)",
+      "PowerShell(pnpm dev *)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm;$env:Path\"; npx next dev --turbopack 2>&1)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm;$env:Path\"; npx next dev 2>&1)",
+      "PowerShell(gh *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe\" --version)"
+    ]
+  }
+}
