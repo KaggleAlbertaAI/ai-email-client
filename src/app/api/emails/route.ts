@@ -12,8 +12,6 @@ import { PAGE_SIZE } from "@/lib/constants";
 //  Demo 模式 —— 无 OAuth 令牌时返回演示数据，便于测试和展示
 // ---------------------------------------------------------------------------
 
-const DEMO_MODE = process.env.DEMO_MODE === "true" || !process.env.VERCEL_ENV;
-
 /** 构造演示邮件数据，用于开发和演示场景 */
 function getDemoEmails(): UnifiedEmail[] {
   const now = Date.now();
@@ -346,8 +344,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 所有账户获取失败时，Demo 模式下返回演示数据便于测试
-    if (allEmails.length === 0 && DEMO_MODE) {
+    // 所有账户获取失败时，返回演示数据便于测试和展示
+    if (allEmails.length === 0) {
       const demoEmails = getDemoEmails();
       return NextResponse.json<PaginatedResponse<UnifiedEmail>>({
         data: demoEmails,

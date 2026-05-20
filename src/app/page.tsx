@@ -110,7 +110,7 @@ export default function Home() {
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
 
   // 使用 useEmails hook 获取真实数据
-  const { emails, loading, selectedEmail, loadInbox, selectEmail, loadMore } = useEmails();
+  const { emails, loading, error, selectedEmail, loadInbox, selectEmail, loadMore } = useEmails();
 
   // AI 功能 hook
   const { summary, replies, classification, isLoading: aiLoading, summarize, getSmartReplies, classify } = useAI();
@@ -332,6 +332,22 @@ export default function Home() {
                   <div className="mt-1 h-3 w-1/2 rounded bg-muted" />
                 </div>
               ))}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <svg className="mb-4 h-16 w-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="mb-2 text-sm text-muted-foreground">加载失败</p>
+              <p className="max-w-xs text-xs text-red-400">{error}</p>
+              <button
+                onClick={() => loadInbox()}
+                className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
+              >
+                重试
+              </button>
             </div>
           ) : emails.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
