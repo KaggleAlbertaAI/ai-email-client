@@ -55,7 +55,7 @@ All protocol responses are normalized to a single contract — `UnifiedEmail`:
 ```
 UnifiedEmail { id, sender, recipients, subject, body{plain, html},
   timestamps{sent, received}, flags{isRead, isStarred, isDraft, hasAttachments},
-  attachments[], source{accountId, protocol, rawId}, ai?{summary, keyPoints, sentiment} }
+  attachments[], threadId?, labels[], source{accountId, protocol, rawId}, ai?{summary, keyPoints, sentiment} }
 ```
 
 This is the sole interface the frontend consumes. Protocol adapters (`gmail.ts`, `graph.ts`, `imap.ts`) convert raw API responses into this format.
@@ -102,3 +102,34 @@ src/
 | Prioritization | Email content | requiresResponse flag + sentiment analysis | Same |
 
 **Fallback**: LLM API failure → degrade to plain text truncation (graceful degradation).
+
+---
+
+## Implemented Features
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Unified Inbox (Gmail/Outlook/IMAP) | ✅ | Protocol adapters normalize to `UnifiedEmail` |
+| Account Switching | ✅ | Filter by `accountId` or show all |
+| Compose / Reply / Forward | ✅ | Overlay modal with auto-fill and quoting |
+| Search & Unread Filter | ✅ | Server-side search + client-side filter |
+| Delete (Trash) | ✅ | Gmail trash + demo fallback |
+| Archive | ✅ | Gmail remove INBOX label, Outlook move to Archive |
+| Labels / Tags | ✅ | Gmail labels, Outlook categories, UI with prompt |
+| AI Summary | ✅ | Auto-load on email select, batch support |
+| Smart Reply | ✅ | 3 drafts (professional/friendly/concise) |
+| AI Classification & Priority | ✅ | Category badge + needs-reply indicator |
+| PWA Offline | ✅ | next-pwa with Workbox, NetworkFirst/CacheFirst |
+| PWA Install Prompt | ✅ | `beforeinstallprompt` event, 30-day dismiss |
+| Unit Tests | ✅ | Vitest, 9 tests for protocol adapters |
+| Demo Mode | ✅ | Fallback when no OAuth tokens configured |
+
+---
+
+## Deliverables Checklist
+
+- [x] Source code (this repo)
+- [x] Live deployment (Vercel)
+- [x] Automated tests (`pnpm test`)
+- [x] Architecture document (this file)
+- [ ] Workflow writeup (submission document)
