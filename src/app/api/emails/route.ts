@@ -9,6 +9,85 @@ import { convertImapToUnified } from "@/lib/api/imap";
 import { PAGE_SIZE } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
+//  Demo 模式 —— 无 OAuth 令牌时返回演示数据，便于测试和展示
+// ---------------------------------------------------------------------------
+
+const DEMO_MODE = process.env.DEMO_MODE === "true" || !process.env.VERCEL_ENV;
+
+/** 构造演示邮件数据，用于开发和演示场景 */
+function getDemoEmails(): UnifiedEmail[] {
+  const now = Date.now();
+  return [
+    {
+      id: "demo-1",
+      sender: { name: "张三", email: "zhangsan@example.com" },
+      recipients: [{ name: "我", email: "user@gmail.com", type: "to" as const }],
+      subject: "Q2 季度项目进度汇报会议通知",
+      body: {
+        plain: "你好，关于 Q2 季度的项目进度，我们将在下周三下午 2 点进行复盘会议。请准备好各模块的完成情况、遇到的问题和下周计划。另外，客户希望看到我们最新的原型演示。",
+        html: "<p>你好，关于 Q2 季度的项目进度，我们将在下周三下午 2 点进行复盘会议。</p>",
+      },
+      timestamps: { sent: new Date(now - 3600000).toISOString(), received: new Date(now - 3600000).toISOString() },
+      flags: { isRead: false, isStarred: true, isDraft: false, hasAttachments: true },
+      attachments: [{ id: "att-1", filename: "Q2_Report.pdf", mimeType: "application/pdf", size: 245000, downloadUrl: "" }],
+      source: { accountId: "demo", protocol: "gmail", rawId: "demo-1" },
+    },
+    {
+      id: "demo-2",
+      sender: { name: "李四", email: "lisi@company.com" },
+      recipients: [{ name: "我", email: "user@gmail.com", type: "to" as const }],
+      subject: "Re: 前端性能优化方案讨论",
+      body: {
+        plain: "收到你的优化方案，整体思路很好。关于虚拟滚动部分，我建议用 react-window 替代当前方案，可以减少约 40% 的渲染开销。另外，图片懒加载可以结合 Intersection Observer API 实现。你本周有空一起 review 一下吗？",
+      },
+      timestamps: { sent: new Date(now - 7200000).toISOString(), received: new Date(now - 7200000).toISOString() },
+      flags: { isRead: false, isStarred: false, isDraft: false, hasAttachments: false },
+      attachments: [],
+      source: { accountId: "demo", protocol: "gmail", rawId: "demo-2" },
+    },
+    {
+      id: "demo-3",
+      sender: { name: "系统通知", email: "noreply@github.com" },
+      recipients: [{ name: "我", email: "user@gmail.com", type: "to" as const }],
+      subject: "[ai-email-client] Pull Request #42 merged",
+      body: {
+        plain: "Pull request #42 'feat: integrate AI summaries' has been merged into main by KaggleAlbertaAI. All 15 checks passed. 3 files changed, 285 insertions(+), 42 deletions(-).",
+      },
+      timestamps: { sent: new Date(now - 1800000).toISOString(), received: new Date(now - 1800000).toISOString() },
+      flags: { isRead: true, isStarred: false, isDraft: false, hasAttachments: false },
+      attachments: [],
+      source: { accountId: "demo", protocol: "gmail", rawId: "demo-3" },
+    },
+    {
+      id: "demo-4",
+      sender: { name: "王五", email: "wangwu@custom-mail.com" },
+      recipients: [{ name: "我", email: "user@gmail.com", type: "to" as const }],
+      subject: "周末技术分享：Rust 在高性能服务中的应用",
+      body: {
+        plain: "本周六晚 8 点，我们团队有一个内部分享会，主题是 Rust 在高并发服务场景中的实践。我会分享几个实际案例，包括 Tokio 异步运行时的调优经验和内存安全的最佳实践。欢迎参加！",
+      },
+      timestamps: { sent: new Date(now - 86400000).toISOString(), received: new Date(now - 86400000).toISOString() },
+      flags: { isRead: true, isStarred: false, isDraft: false, hasAttachments: false },
+      attachments: [],
+      source: { accountId: "demo", protocol: "gmail", rawId: "demo-4" },
+    },
+    {
+      id: "demo-5",
+      sender: { name: "赵六", email: "zhaoliu@company.com" },
+      recipients: [{ name: "我", email: "user@company.com", type: "to" as const }],
+      subject: "【审批】产品需求文档 PRD v2.3 已提交",
+      body: {
+        plain: "PRD v2.3 已提交至 Confluence，主要更新了用户权限模块和数据分析看板的需求。请在本周五前完成审批。如有疑问，可以随时联系我。",
+      },
+      timestamps: { sent: new Date(now - 43200000).toISOString(), received: new Date(now - 43200000).toISOString() },
+      flags: { isRead: false, isStarred: false, isDraft: false, hasAttachments: true },
+      attachments: [{ id: "att-2", filename: "PRD_v2.3.docx", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 1024000, downloadUrl: "" }],
+      source: { accountId: "demo", protocol: "graph", rawId: "demo-5" },
+    },
+  ];
+}
+
+// ---------------------------------------------------------------------------
 //  凭据获取 — 从请求头 Authorization 获取 OAuth Token
 // ---------------------------------------------------------------------------
 
@@ -265,6 +344,16 @@ export async function GET(request: NextRequest) {
         // 单个账户获取失败不影响其他账户
         continue;
       }
+    }
+
+    // 所有账户获取失败时，Demo 模式下返回演示数据便于测试
+    if (allEmails.length === 0 && DEMO_MODE) {
+      const demoEmails = getDemoEmails();
+      return NextResponse.json<PaginatedResponse<UnifiedEmail>>({
+        data: demoEmails,
+        nextCursor: null,
+        hasMore: false,
+      });
     }
 
     // 按接收时间降序排序
