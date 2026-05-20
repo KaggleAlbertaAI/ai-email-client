@@ -59,7 +59,7 @@ async function lookupAccount(accountId: string): Promise<UnifiedAccount> {
 /**
  * 模拟从 Gmail API 获取原始邮件列表
  */
-async function fetchGmailMessages(accountId: string, cursor: string | null, limit: number) {
+async function fetchGmailMessages(_accountId: string, cursor: string | null, limit: number) {
   // TODO: 替换为真实的 Gmail API 调用
   // const gmail = google.gmail({ version: "v1", auth: oauth2Client });
   // const response = await gmail.users.messages.list({ userId: "me", q: "", maxResults: limit });
@@ -72,7 +72,7 @@ async function fetchGmailMessages(accountId: string, cursor: string | null, limi
 /**
  * 模拟从 Microsoft Graph API 获取原始邮件列表
  */
-async function fetchOutlookMessages(accountId: string, cursor: string | null, limit: number) {
+async function fetchOutlookMessages(_accountId: string, cursor: string | null, limit: number) {
   // TODO: 替换为真实的 Microsoft Graph API 调用
   // const client = Client.init({ authProvider });
   // const response = await client.api("/me/messages").top(limit).get();
@@ -85,7 +85,7 @@ async function fetchOutlookMessages(accountId: string, cursor: string | null, li
 /**
  * 模拟从 IMAP 服务器获取原始邮件列表
  */
-async function fetchImapMessages(accountId: string, cursor: string | null, limit: number) {
+async function fetchImapMessages(_accountId: string, cursor: string | null, limit: number) {
   // TODO: 替换为真实的 IMAP 调用（使用 node-imap 等库）
   // const Imap = require("imap");
   // const imap = new Imap({ user, password, host, port, tls: true });
