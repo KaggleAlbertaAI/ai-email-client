@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export type ComposeMode = "new" | "reply" | "replyAll" | "forward";
@@ -43,8 +43,12 @@ export function ComposeForm({
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 根据模式初始化表单
+  // 根据模式初始化表单 — 只在组件挂载时执行一次
+  const initialized = useRef(false);
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     if (mode === "new") return;
     if (!originalEmail) return;
 

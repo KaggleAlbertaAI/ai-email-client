@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useUIStore } from "@/lib/store/ui-store";
 import { useEmails } from "@/hooks/useEmails";
 import { useAI } from "@/hooks/use-ai";
@@ -11,7 +11,6 @@ import { ComposeForm, ComposeMode } from "@/components/mail/compose-form";
 import type { UnifiedEmail, UnifiedAccount } from "@/lib/api/types";
 import { cn, formatDate } from "@/lib/utils";
 import { archiveEmail, updateEmailLabels } from "@/lib/api/mail";
-import { createPortal } from "react-dom";
 
 // ---------------------------------------------------------------------------
 //  模拟账户数据 —— 实际项目中从 /api/accounts 获取
@@ -118,10 +117,16 @@ export default function Home() {
   const [composeMode, setComposeMode] = useState<ComposeMode | null>(null);
   const [composeEmail, setComposeEmail] = useState<UnifiedEmail | null>(null);
 
-  // Portal: 确保 compose overlay 在 document.body 层级渲染，避开任何父容器的 overflow/transform 限制
-  const [isClient, setIsClient] = useState(false);
-  useLayoutEffect(() => {
-    setIsClient(true);
+  // 打开 compose
+  const openCompose = useCallback((mode: ComposeMode, email?: UnifiedEmail) => {
+    setComposeMode(mode);
+    setComposeEmail(email ?? null);
+  }, []);
+
+  // 关闭 compose
+  const closeCompose = useCallback(() => {
+    setComposeMode(null);
+    setComposeEmail(null);
   }, []);
 
   // 搜索状态
@@ -164,10 +169,13 @@ export default function Home() {
 
   // 回复/转发
   const handleReply = useCallback((mode: ComposeMode) => {
-    if (!selectedEmail) return;
-    setComposeMode(mode);
-    setComposeEmail(selectedEmail);
-  }, [selectedEmail]);
+    if (!selectedEmail) {
+      console.warn("handleReply: no selectedEmail");
+      return;
+    }
+    console.log("handleReply:", mode, selectedEmail.subject);
+    openCompose(mode, selectedEmail);
+  }, [selectedEmail, openCompose]);
 
   const handleComposeSent = useCallback(() => {
     setComposeMode(null);
@@ -444,10 +452,7 @@ export default function Home() {
             <h1 className="text-base font-semibold">收件箱</h1>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  setComposeMode("new");
-                  setComposeEmail(null);
-                }}
+                onClick={() => openCompose("new")}
                 className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
                 撰写
@@ -822,32 +827,36 @@ export default function Home() {
       {/* ===== PWA 安装引导 ===== */}
       <PWAInstallPrompt />
 
-      {/* ===== 撰写/回复/转发面板（Portal 渲染，确保在 body 层级） ===== */}
-      {isClient && composeMode && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-2 md:p-8">
-          <div className="h-full w-full max-w-2xl overflow-hidden rounded-xl border bg-background shadow-2xl md:h-auto md:max-h-[80vh]">
-            <ComposeForm
-              mode={composeMode}
-              originalEmail={
-                composeEmail
-                  ? {
-                      sender: composeEmail.sender,
-                      recipients: composeEmail.recipients,
-                      subject: composeEmail.subject,
-                      body: { plain: composeEmail.body.plain },
-                    }
-                  : undefined
-              }
-              onSent={handleComposeSent}
-              onClose={() => {
-                setComposeMode(null);
-                setComposeEmail(null);
-              }}
-            />
+      {/* ===== 撰写/回复/转发面板（固定定位覆盖层） ===== */}
+      {composeMode && (() => {
+        const composeData = composeEmail
+          ? {
+              sender: composeEmail.sender,
+              recipients: composeEmail.recipients,
+              subject: composeEmail.subject,
+              body: { plain: composeEmail.body.plain },
+            }
+          : undefined;
+
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+            className="bg-black/40 p-2 md:p-8"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeCompose();
+            }}
+          >
+            <div className="h-full w-full max-w-2xl overflow-hidden rounded-xl border bg-background shadow-2xl md:h-auto md:max-h-[80vh]">
+              <ComposeForm
+                mode={composeMode}
+                originalEmail={composeData}
+                onSent={handleComposeSent}
+                onClose={closeCompose}
+              />
+            </div>
           </div>
-        </div>,
-        document.body
-      )}
+        );
+      })()}
     </div>
   );
 }
