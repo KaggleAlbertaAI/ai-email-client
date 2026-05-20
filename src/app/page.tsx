@@ -7,6 +7,7 @@ import { useAI } from "@/hooks/use-ai";
 import { usePWA } from "@/hooks/use-pwa";
 import { SmartReply } from "@/components/ai/smart-reply";
 import { PWAInstallPrompt } from "@/components/pwa/install-prompt";
+import { ComposeForm, ComposeMode } from "@/components/mail/compose-form";
 import type { UnifiedEmail, UnifiedAccount } from "@/lib/api/types";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -111,6 +112,10 @@ export default function Home() {
   // 移动端视图控制："list" | "detail"
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
 
+  // 撰写/回复/转发面板
+  const [composeMode, setComposeMode] = useState<ComposeMode | null>(null);
+  const [composeEmail, setComposeEmail] = useState<UnifiedEmail | null>(null);
+
   // 使用 useEmails hook 获取真实数据
   const { emails, loading, error, selectedEmail, loadInbox, selectEmail, loadMore } = useEmails();
 
@@ -144,6 +149,19 @@ export default function Home() {
     setMobileView("list");
     selectEmail(null);
   }, [selectEmail]);
+
+  // 回复/转发
+  const handleReply = useCallback((mode: ComposeMode) => {
+    if (!selectedEmail) return;
+    setComposeMode(mode);
+    setComposeEmail(selectedEmail);
+  }, [selectedEmail]);
+
+  const handleComposeSent = useCallback(() => {
+    setComposeMode(null);
+    setComposeEmail(null);
+    loadInbox();
+  }, [loadInbox]);
 
   // 当前账户名称
   const currentAccountName = useMemo(() => {
@@ -320,7 +338,18 @@ export default function Home() {
             </svg>
           </button>
           <h1 className="text-base font-semibold">收件箱</h1>
-          <span className="text-xs text-muted-foreground">{emails.length} 封邮件</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setComposeMode("new");
+                setComposeEmail(null);
+              }}
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              撰写
+            </button>
+            <span className="text-xs text-muted-foreground">{emails.length} 封邮件</span>
+          </div>
         </div>
 
         {/* 邮件列表内容 —— 虚拟滚动容器 */}
@@ -455,6 +484,41 @@ export default function Home() {
                   </div>
                   <p className="text-xs text-muted-foreground">{selectedEmail.sender.email}</p>
                 </div>
+              </div>
+
+              {/* 回复/转发操作按钮 */}
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => handleReply("reply")}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 17 4 12 9 7" />
+                    <path d="M20 18v-2a4 4 0 00-4-4H4" />
+                  </svg>
+                  回复
+                </button>
+                <button
+                  onClick={() => handleReply("replyAll")}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="7 17 2 12 7 7" />
+                    <polyline points="17 17 12 12 17 7" />
+                    <path d="M22 18v-2a4 4 0 00-4-4H4" />
+                  </svg>
+                  全部回复
+                </button>
+                <button
+                  onClick={() => handleReply("forward")}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="15 17 20 12 15 7" />
+                    <path d="M4 18v-2a4 4 0 014-4h12" />
+                  </svg>
+                  转发
+                </button>
               </div>
 
               {/* AI 摘要 + 分类 */}
@@ -606,6 +670,32 @@ export default function Home() {
 
       {/* ===== PWA 安装引导 ===== */}
       <PWAInstallPrompt />
+
+      {/* ===== 撰写/回复/转发面板（覆盖层） ===== */}
+      {composeMode && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-2 md:p-8">
+          <div className="h-full w-full max-w-2xl overflow-hidden rounded-xl border bg-background shadow-2xl md:h-auto md:max-h-[80vh]">
+            <ComposeForm
+              mode={composeMode}
+              originalEmail={
+                composeEmail
+                  ? {
+                      sender: composeEmail.sender,
+                      recipients: composeEmail.recipients,
+                      subject: composeEmail.subject,
+                      body: { plain: composeEmail.body.plain },
+                    }
+                  : undefined
+              }
+              onSent={handleComposeSent}
+              onClose={() => {
+                setComposeMode(null);
+                setComposeEmail(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

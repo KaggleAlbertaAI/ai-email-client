@@ -31,7 +31,11 @@
       "Bash(git pull *)",
       "Bash(git stash *)",
       "Bash(npx tsc *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(npm install *)",
+      "Bash(pnpm add *)",
+      "Bash(node *)",
+      "Bash(grep -n \"</div>$\" \"C:/Users/36558/ai-email-client/src/app/page.tsx\")"
     ]
   }
 }
