@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from "react";
 import { useUIStore } from "@/lib/store/ui-store";
 import { useEmails } from "@/hooks/useEmails";
 import { useAI } from "@/hooks/use-ai";
@@ -11,6 +11,7 @@ import { ComposeForm, ComposeMode } from "@/components/mail/compose-form";
 import type { UnifiedEmail, UnifiedAccount } from "@/lib/api/types";
 import { cn, formatDate } from "@/lib/utils";
 import { archiveEmail, updateEmailLabels } from "@/lib/api/mail";
+import { createPortal } from "react-dom";
 
 // ---------------------------------------------------------------------------
 //  模拟账户数据 —— 实际项目中从 /api/accounts 获取
@@ -116,6 +117,12 @@ export default function Home() {
   // 撰写/回复/转发面板
   const [composeMode, setComposeMode] = useState<ComposeMode | null>(null);
   const [composeEmail, setComposeEmail] = useState<UnifiedEmail | null>(null);
+
+  // Portal: 确保 compose overlay 在 document.body 层级渲染，避开任何父容器的 overflow/transform 限制
+  const [isClient, setIsClient] = useState(false);
+  useLayoutEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // 搜索状态
   const [searchQuery, setSearchQuery] = useState("");
@@ -815,9 +822,9 @@ export default function Home() {
       {/* ===== PWA 安装引导 ===== */}
       <PWAInstallPrompt />
 
-      {/* ===== 撰写/回复/转发面板（覆盖层） ===== */}
-      {composeMode && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-2 md:p-8">
+      {/* ===== 撰写/回复/转发面板（Portal 渲染，确保在 body 层级） ===== */}
+      {isClient && composeMode && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-2 md:p-8">
           <div className="h-full w-full max-w-2xl overflow-hidden rounded-xl border bg-background shadow-2xl md:h-auto md:max-h-[80vh]">
             <ComposeForm
               mode={composeMode}
@@ -838,7 +845,8 @@ export default function Home() {
               }}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
