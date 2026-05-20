@@ -841,12 +841,12 @@ export default function Home() {
         return (
           <div
             style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-            className="bg-black/40 p-2 md:p-8"
+            className="bg-black/50 p-2 md:p-8"
             onClick={(e) => {
               if (e.target === e.currentTarget) closeCompose();
             }}
           >
-            <div className="h-full w-full max-w-2xl overflow-hidden rounded-xl border bg-background shadow-2xl md:h-auto md:max-h-[80vh]">
+            <div className="h-full w-full max-w-2xl overflow-hidden rounded-xl border border-gray-300 bg-white shadow-2xl md:h-auto md:max-h-[80vh]">
               <ComposeForm
                 mode={composeMode}
                 originalEmail={composeData}
