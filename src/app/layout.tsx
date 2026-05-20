@@ -9,10 +9,20 @@ export const metadata: Metadata = {
   description: "AI-first 通用邮件客户端 PWA",
   manifest: "/manifest.json",
   themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "AI Mail",
+  },
   viewport: {
     width: "device-width",
     initialScale: 1,
     maximumScale: 1,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
   },
 };
 

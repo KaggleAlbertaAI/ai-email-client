@@ -4,7 +4,9 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useUIStore } from "@/lib/store/ui-store";
 import { useEmails } from "@/hooks/useEmails";
 import { useAI } from "@/hooks/use-ai";
+import { usePWA } from "@/hooks/use-pwa";
 import { SmartReply } from "@/components/ai/smart-reply";
+import { PWAInstallPrompt } from "@/components/pwa/install-prompt";
 import type { UnifiedEmail, UnifiedAccount } from "@/lib/api/types";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -114,6 +116,9 @@ export default function Home() {
 
   // AI 功能 hook
   const { summary, replies, classification, isLoading: aiLoading, summarize, getSmartReplies, classify } = useAI();
+
+  // PWA 状态
+  const { isOnline } = usePWA();
 
   // AI 摘要生成状态（记录已生成摘要的邮件 ID）
   const [summarizedIds, setSummarizedIds] = useState<Set<string>>(new Set());
@@ -587,6 +592,20 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* ===== 离线横幅 ===== */}
+      {!isOnline && (
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-yellow-500 px-4 py-2 text-sm font-medium text-yellow-950">
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18.36 19.61A9 9 0 105.64 5.64" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+          离线模式 — 仅可查看已缓存的邮件
+        </div>
+      )}
+
+      {/* ===== PWA 安装引导 ===== */}
+      <PWAInstallPrompt />
     </div>
   );
 }
