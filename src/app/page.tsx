@@ -110,16 +110,6 @@ export default function Home() {
   // 使用 useEmails hook 获取真实数据
   const { emails, loading, selectedEmail, loadInbox, selectEmail, loadMore } = useEmails();
 
-  // 账户切换时刷新
-  const handleAccountChange = useCallback(
-    (accountId: string) => {
-      setSelectedAccountId(accountId);
-      setAccountDropdownOpen(false);
-      loadInbox(accountId !== "all" ? { accountId } : undefined);
-    },
-    [loadInbox]
-  );
-
   // 选择邮件
   const handleSelectEmail = useCallback(
     (email: UnifiedEmail) => {

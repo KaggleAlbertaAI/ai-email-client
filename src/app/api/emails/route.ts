@@ -2,7 +2,7 @@
 // 统一收件箱入口 — 根据账户协议类型动态调用适配器，返回统一格式的邮件列表
 
 import { NextRequest, NextResponse } from "next/server";
-import type { UnifiedEmail, PaginatedResponse, ApiError, UnifiedAccount } from "@/lib/api/types";
+import type { UnifiedEmail, PaginatedResponse, ApiError, UnifiedAccount, RawGmailMessage, RawOutlookMessage, RawImapMessage } from "@/lib/api/types";
 import { convertGmailToUnified } from "@/lib/api/gmail";
 import { convertOutlookToUnified } from "@/lib/api/outlook";
 import { convertImapToUnified } from "@/lib/api/imap";
@@ -106,12 +106,6 @@ function generateMockGmailMessages(count: number) {
     "您的账户登录安全提醒",
     "Re: 技术架构评审反馈",
     "AWS 费用优化建议",
-  ];
-  const senders = [
-    { name: "张三", email: "zhangsan@example.com" },
-    { name: "系统通知", email: "noreply@example.com" },
-    { name: "赵六", email: "zhaoliu@example.com" },
-    { name: "运维团队", email: "ops@example.com" },
   ];
   const bodies = [
     "你好，关于 Q2 季度的项目进度，我们将在下周三下午 2 点进行复盘会议。请准备好各模块的完成情况、遇到的问题和下周计划。",
@@ -307,24 +301,24 @@ async function fetchMessagesForAccount(
     case "gmail": {
       const { messages, nextCursor } = await fetchGmailMessages(account.id, cursor, limit);
       // 将原始 Gmail 数据转换为 UnifiedEmail
-      const emails = messages.map((msg: unknown) =>
-        convertGmailToUnified(msg as Record<string, unknown>, account.id)
+      const emails = messages.map((msg) =>
+        convertGmailToUnified(msg as unknown as RawGmailMessage, account.id)
       );
       return { data: emails, nextCursor, hasMore: !!nextCursor };
     }
 
     case "graph": {
       const { messages, nextCursor } = await fetchOutlookMessages(account.id, cursor, limit);
-      const emails = messages.map((msg: unknown) =>
-        convertOutlookToUnified(msg as Record<string, unknown>, account.id)
+      const emails = messages.map((msg) =>
+        convertOutlookToUnified(msg as unknown as RawOutlookMessage, account.id)
       );
       return { data: emails, nextCursor, hasMore: !!nextCursor };
     }
 
     case "imap": {
       const { messages, nextCursor } = await fetchImapMessages(account.id, cursor, limit);
-      const emails = messages.map((msg: unknown) =>
-        convertImapToUnified(msg as Record<string, unknown>, account.id)
+      const emails = messages.map((msg) =>
+        convertImapToUnified(msg as unknown as RawImapMessage, account.id)
       );
       return { data: emails, nextCursor, hasMore: !!nextCursor };
     }

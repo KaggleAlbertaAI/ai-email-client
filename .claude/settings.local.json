@@ -22,7 +22,15 @@
       "PowerShell($env:Path = \"C:\\\\Program Files\\\\Git\\\\cmd;C:\\\\Program Files\\\\Git\\\\bin;$env:Path\"; git remote -v ; git status)",
       "PowerShell(git add *)",
       "PowerShell(git log *)",
-      "PowerShell(git remote *)"
+      "PowerShell(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(git remote *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

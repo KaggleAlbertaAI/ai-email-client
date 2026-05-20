@@ -304,7 +304,6 @@ ${context}
     }));
   } catch {
     // JSON 解析失败时返回降级内容
-    const senderName = email.sender.name ?? email.sender.email;
     return [
       {
         content: `感谢您的邮件，我会尽快处理。`,
