@@ -1,24 +1,21 @@
-// AI 功能相关类型定义
+// AI 功能类型定义 — 与 API 路由返回结构对齐
 
 /** AI 邮件摘要结果 */
 export interface AISummary {
-  mailId: string;
   summary: string;
   keyPoints: string[];
-  sentiment?: "positive" | "neutral" | "negative";
-  suggestedActions?: string[];
+  sentiment: "positive" | "neutral" | "negative";
+  requiresResponse: boolean;
 }
 
 /** AI 智能回复建议 */
 export interface SmartReply {
-  id: string;
   content: string;
-  tone: "formal" | "casual" | "brief";
+  tone: "professional" | "friendly" | "concise";
 }
 
 /** AI 邮件分类 */
 export interface MailClassification {
-  mailId: string;
   category: "important" | "normal" | "promotional" | "social";
   priority: number;
   requiresResponse: boolean;

@@ -31,7 +31,12 @@ export interface AIProviderConfig {
  *   NEXT_PUBLIC_AI_MODEL=deepseek-ai/DeepSeek-V3
  */
 function getProviderConfig(): AIProviderConfig {
-  const provider = (process.env.NEXT_PUBLIC_AI_PROVIDER ?? "siliconflow") as AIProvider;
+  // 服务端 API 路由优先使用非 NEXT_PUBLIC_ 前缀的变量（更安全）
+  // 客户端和 next.config 中则使用 NEXT_PUBLIC_ 前缀
+  const provider = (process.env.AI_PROVIDER ?? process.env.NEXT_PUBLIC_AI_PROVIDER ?? "siliconflow") as AIProvider;
+  const apiKey = process.env.AI_API_KEY ?? process.env.NEXT_PUBLIC_AI_API_KEY ?? "";
+  const baseUrl = process.env.AI_BASE_URL ?? process.env.NEXT_PUBLIC_AI_BASE_URL ?? "";
+  const model = process.env.AI_MODEL ?? process.env.NEXT_PUBLIC_AI_MODEL ?? "";
 
   const configs: Record<AIProvider, Omit<AIProviderConfig, "apiKey">> = {
     siliconflow: {
@@ -46,15 +51,15 @@ function getProviderConfig(): AIProviderConfig {
     },
     "openai-compatible": {
       provider: "openai-compatible",
-      baseUrl: process.env.NEXT_PUBLIC_AI_BASE_URL ?? "",
-      model: process.env.NEXT_PUBLIC_AI_MODEL ?? "",
+      baseUrl: baseUrl,
+      model: model,
     },
   };
 
   const cfg = configs[provider];
   return {
     ...cfg,
-    apiKey: process.env.NEXT_PUBLIC_AI_API_KEY ?? "",
+    apiKey,
   };
 }
 
@@ -350,4 +355,88 @@ export async function generateSummariesBatch(
   }
 
   return results;
+}
+
+// ---------------------------------------------------------------------------
+//  核心功能 3：AI 邮件分类与优先级
+// ---------------------------------------------------------------------------
+
+export interface MailClassification {
+  /** 邮件类别 */
+  category: "important" | "normal" | "promotional" | "social";
+  /** 优先级 1-5，1 最高 */
+  priority: number;
+  /** 是否需要回复 */
+  requiresResponse: boolean;
+}
+
+/**
+ * 根据邮件内容自动分类并评估优先级
+ * 类别：important（重要）、normal（普通）、promotional（推广）、social（社交）
+ */
+export async function classifyMail(email: UnifiedEmail): Promise<MailClassification> {
+  // 已有缓存则直接返回
+  if (email.ai?.requiresResponse !== undefined && email.ai.sentiment) {
+    const priority = email.ai.sentiment === "negative" ? 1 : 2;
+    return {
+      category: "important",
+      priority,
+      requiresResponse: email.ai.requiresResponse,
+    };
+  }
+
+  const config = getProviderConfig();
+  const context = extractMailContext(email);
+
+  const systemPrompt = `你是一个邮件分类助手。请根据邮件内容将其分类并评估优先级。
+
+输出要求（JSON 格式）：
+1. category：邮件类别，值为 important、normal、promotional 或 social
+   - important：工作相关、紧急通知、财务、安全问题等
+   - normal：日常沟通、信息分享、一般讨论
+   - promotional：营销、广告、优惠邮件、新闻简报
+   - social：社交网络通知、活动邀请、好友动态
+2. priority：优先级，1-5（1 最高，5 最低）
+3. requiresResponse：是否需要收件人回复（布尔值）
+
+请严格按照 JSON 格式输出，不要添加任何其他文字。`;
+
+  const userPrompt = `发件人：${email.sender.name ?? email.sender.email}
+主题：${email.subject}
+
+正文：
+${context}`;
+
+  const raw = await chatCompletion(
+    config,
+    [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    { temperature: 0.3, maxTokens: 200, jsonMode: true }
+  );
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      category: string;
+      priority: number;
+      requiresResponse: boolean;
+    };
+
+    const validCategories = ["important", "normal", "promotional", "social"];
+    return {
+      category: validCategories.includes(parsed.category)
+        ? (parsed.category as MailClassification["category"])
+        : "normal",
+      priority: Math.min(5, Math.max(1, parsed.priority ?? 3)),
+      requiresResponse: parsed.requiresResponse ?? false,
+    };
+  } catch {
+    // 分类失败时返回默认值
+    return {
+      category: "normal",
+      priority: 3,
+      requiresResponse: false,
+    };
+  }
 }

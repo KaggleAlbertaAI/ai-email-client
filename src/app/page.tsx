@@ -3,6 +3,8 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useUIStore } from "@/lib/store/ui-store";
 import { useEmails } from "@/hooks/useEmails";
+import { useAI } from "@/hooks/use-ai";
+import { SmartReply } from "@/components/ai/smart-reply";
 import type { UnifiedEmail, UnifiedAccount } from "@/lib/api/types";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -110,13 +112,26 @@ export default function Home() {
   // 使用 useEmails hook 获取真实数据
   const { emails, loading, selectedEmail, loadInbox, selectEmail, loadMore } = useEmails();
 
-  // 选择邮件
+  // AI 功能 hook
+  const { summary, replies, classification, isLoading: aiLoading, summarize, getSmartReplies, classify } = useAI();
+
+  // AI 摘要生成状态（记录已生成摘要的邮件 ID）
+  const [summarizedIds, setSummarizedIds] = useState<Set<string>>(new Set());
+
+  // 选择邮件并触发 AI 处理
   const handleSelectEmail = useCallback(
     (email: UnifiedEmail) => {
       selectEmail(email);
       setMobileView("detail");
+
+      // 首次选中时触发 AI 摘要和分类
+      if (!summarizedIds.has(email.id)) {
+        summarize(email);
+        classify(email);
+        setSummarizedIds((prev) => new Set(prev).add(email.id));
+      }
     },
-    [selectEmail]
+    [selectEmail, summarizedIds, summarize, classify]
   );
 
   // 返回列表（移动端）
@@ -329,46 +344,50 @@ export default function Home() {
           ) : (
             <div className="divide-y">
               {emails.map((email) => (
-                <button
-                  key={email.id}
-                  onClick={() => handleSelectEmail(email)}
-                  className={cn(
-                    "w-full border-b p-4 text-left transition-colors hover:bg-muted",
-                    selectedEmail?.id === email.id && "bg-muted",
-                    !email.flags.isRead && "bg-primary/5"
-                  )}
-                  role="listitem"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      {!email.flags.isRead && (
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-                      )}
-                      {email.flags.isStarred && (
-                        <span className="shrink-0 text-amber-500">{ICONS.star}</span>
-                      )}
-                      <span
-                        className={cn(
-                          "truncate text-sm",
-                          !email.flags.isRead ? "font-semibold" : "font-medium"
+                  <button
+                    key={email.id}
+                    onClick={() => handleSelectEmail(email)}
+                    className={cn(
+                      "w-full border-b p-4 text-left transition-colors hover:bg-muted",
+                      selectedEmail?.id === email.id && "bg-muted",
+                      !email.flags.isRead && "bg-primary/5"
+                    )}
+                    role="listitem"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {/* AI 优先级指示点 */}
+                        {email.ai?.requiresResponse && (
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" title="需要回复" />
                         )}
-                      >
-                        {email.sender.name || email.sender.email}
+                        {!email.flags.isRead && !email.ai?.requiresResponse && (
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                        )}
+                        {email.flags.isStarred && (
+                          <span className="shrink-0 text-amber-500">{ICONS.star}</span>
+                        )}
+                        <span
+                          className={cn(
+                            "truncate text-sm",
+                            !email.flags.isRead ? "font-semibold" : "font-medium"
+                          )}
+                        >
+                          {email.sender.name || email.sender.email}
+                        </span>
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatDate(new Date(email.timestamps.received))}
                       </span>
                     </div>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatDate(new Date(email.timestamps.received))}
-                    </span>
-                  </div>
-                  <p className="mt-1 truncate text-sm">{email.subject}</p>
-                  {/* AI 摘要预览 */}
-                  {email.ai?.summary && (
-                    <p className="mt-1 truncate text-xs text-muted-foreground/80">
-                      <span className="text-primary/70">AI：</span>
-                      {email.ai.summary}
-                    </p>
-                  )}
-                </button>
+                    <p className="mt-1 truncate text-sm">{email.subject}</p>
+                    {/* AI 摘要预览 */}
+                    {email.ai?.summary && (
+                      <p className="mt-1 truncate text-xs text-muted-foreground/80">
+                        <span className="text-primary/70">AI：</span>
+                        {email.ai.summary}
+                      </p>
+                    )}
+                  </button>
               ))}
             </div>
           )}
@@ -417,28 +436,95 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* AI 摘要 */}
-              {selectedEmail.ai && (
-                <div className="mt-4 rounded-lg border bg-muted/50 p-3">
-                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 2a10 10 0 0110 10 10 10 0 01-10 10A10 10 0 012 12 10 10 0 0112 2z" />
-                      <path d="M12 8v4l3 3" />
-                    </svg>
-                    AI 摘要
+              {/* AI 摘要 + 分类 */}
+              <div className="mt-4 space-y-3">
+                {aiLoading && !summary ? (
+                  <div className="rounded-lg border bg-muted/50 p-3">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2a10 10 0 0110 10" />
+                      </svg>
+                      AI 正在分析邮件...
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{selectedEmail.ai.summary}</p>
-                  {selectedEmail.ai.keyPoints && selectedEmail.ai.keyPoints.length > 0 && (
-                    <ul className="mt-2 list-inside space-y-0.5">
-                      {selectedEmail.ai.keyPoints.map((point, i) => (
-                        <li key={i} className="text-xs text-muted-foreground">
-                          • {point}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
+                ) : summary ? (
+                  <>
+                    <div className="rounded-lg border bg-muted/50 p-3">
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
+                          </svg>
+                          AI 摘要
+                        </div>
+                        {/* 优先级标签 */}
+                        {classification && (
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-xs font-medium",
+                              classification.category === "important"
+                                ? "bg-red-100 text-red-700"
+                                : classification.category === "promotional"
+                                  ? "bg-green-100 text-green-700"
+                                  : classification.category === "social"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-gray-100 text-gray-600"
+                            )}
+                          >
+                            {classification.category === "important" && "重要"}
+                            {classification.category === "normal" && "普通"}
+                            {classification.category === "promotional" && "推广"}
+                            {classification.category === "social" && "社交"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-foreground/90">{summary.summary}</p>
+                      {summary.keyPoints && summary.keyPoints.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {summary.keyPoints.map((point, i) => (
+                            <li key={i} className="text-xs text-muted-foreground">
+                              • {point}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {summary.requiresResponse && (
+                        <div className="mt-2 flex items-center gap-1 text-xs text-red-500">
+                          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                          </svg>
+                          AI 判断需要回复
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 智能回复建议 */}
+                    <button
+                      onClick={() => getSmartReplies(selectedEmail)}
+                      className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                      </svg>
+                      {replies.length > 0 ? "换一批智能回复" : "生成智能回复建议"}
+                    </button>
+
+                    {replies.length > 0 && (
+                      <SmartReply
+                        suggestions={replies.map((r) => ({ content: r.content, tone: r.tone }))}
+                        onSelect={(content) => {
+                          navigator.clipboard?.writeText(content);
+                          // TODO: 未来填充到回复框
+                        }}
+                      />
+                    )}
+                  </>
+                ) : null}
+              </div>
 
               {/* 正文 */}
               <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
