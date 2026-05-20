@@ -299,6 +299,52 @@ async function fetchImapMessages(_cursor: string | null, _limit: number): Promis
 }
 
 // ---------------------------------------------------------------------------
+//  过滤与排序
+// ---------------------------------------------------------------------------
+
+/**
+ * 对邮件列表应用搜索过滤、未读过滤和排序，返回分页结果
+ */
+function applyFilters(
+  result: PaginatedResponse<UnifiedEmail>,
+  searchQuery: string | null,
+  unreadOnly: boolean,
+  limit: number
+): PaginatedResponse<UnifiedEmail> {
+  let emails = result.data;
+
+  // 搜索：匹配主题、发件人、正文
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    emails = emails.filter(
+      (e) =>
+        e.subject.toLowerCase().includes(query) ||
+        e.sender.email.toLowerCase().includes(query) ||
+        (e.sender.name && e.sender.name.toLowerCase().includes(query)) ||
+        e.body.plain.toLowerCase().includes(query)
+    );
+  }
+
+  // 仅未读
+  if (unreadOnly) {
+    emails = emails.filter((e) => !e.flags.isRead);
+  }
+
+  // 按接收时间降序排序
+  emails.sort((a, b) => {
+    const timeA = new Date(a.timestamps.received).getTime();
+    const timeB = new Date(b.timestamps.received).getTime();
+    return timeB - timeA;
+  });
+
+  return {
+    data: emails.slice(0, limit),
+    nextCursor: emails.length > limit ? emails[limit].id : null,
+    hasMore: emails.length > limit,
+  };
+}
+
+// ---------------------------------------------------------------------------
 //  核心路由逻辑
 // ---------------------------------------------------------------------------
 
@@ -321,13 +367,15 @@ export async function GET(request: NextRequest) {
     const accountId = searchParams.get("accountId");
     const cursor = searchParams.get("cursor");
     const limitParam = searchParams.get("limit");
+    const searchQuery = searchParams.get("searchQuery");
+    const unreadOnly = searchParams.get("unreadOnly") === "true";
     const limit = limitParam ? parseInt(limitParam, 10) : PAGE_SIZE;
 
     // 指定了 accountId，只查询该账户
     if (accountId) {
       const account = await lookupAccount(accountId);
       const emails = await fetchMessagesForAccount(account, cursor, limit, request);
-      return NextResponse.json(emails);
+      return NextResponse.json(applyFilters(emails, searchQuery, unreadOnly, limit));
     }
 
     // 聚合所有已连接账户的邮件
@@ -347,25 +395,14 @@ export async function GET(request: NextRequest) {
     // 所有账户获取失败时，返回演示数据便于测试和展示
     if (allEmails.length === 0) {
       const demoEmails = getDemoEmails();
-      return NextResponse.json<PaginatedResponse<UnifiedEmail>>({
-        data: demoEmails,
-        nextCursor: null,
-        hasMore: false,
-      });
+      return NextResponse.json<PaginatedResponse<UnifiedEmail>>(
+        applyFilters({ data: demoEmails, nextCursor: null, hasMore: false }, searchQuery, unreadOnly, limit)
+      );
     }
 
-    // 按接收时间降序排序
-    allEmails.sort((a, b) => {
-      const timeA = new Date(a.timestamps.received).getTime();
-      const timeB = new Date(b.timestamps.received).getTime();
-      return timeB - timeA;
-    });
-
-    return NextResponse.json<PaginatedResponse<UnifiedEmail>>({
-      data: allEmails.slice(0, limit),
-      nextCursor: allEmails.length > limit ? allEmails[limit].id : null,
-      hasMore: allEmails.length > limit,
-    });
+    return NextResponse.json<PaginatedResponse<UnifiedEmail>>(
+      applyFilters({ data: allEmails, nextCursor: null, hasMore: false }, searchQuery, unreadOnly, limit)
+    );
   } catch (error) {
     const apiError: ApiError = {
       code: "FETCH_EMAILS_FAILED",

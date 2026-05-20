@@ -116,6 +116,10 @@ export default function Home() {
   const [composeMode, setComposeMode] = useState<ComposeMode | null>(null);
   const [composeEmail, setComposeEmail] = useState<UnifiedEmail | null>(null);
 
+  // 搜索状态
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+
   // 使用 useEmails hook 获取真实数据
   const { emails, loading, error, selectedEmail, loadInbox, selectEmail, loadMore } = useEmails();
 
@@ -162,6 +166,29 @@ export default function Home() {
     setComposeEmail(null);
     loadInbox();
   }, [loadInbox]);
+
+  // 搜索（前端过滤已加载的邮件）
+  const handleSearch = useCallback(() => {
+    loadInbox(searchQuery ? { searchQuery } : undefined);
+    setShowSearch(false);
+  }, [searchQuery, loadInbox]);
+
+  // 删除邮件
+  const handleDelete = useCallback(async () => {
+    if (!selectedEmail) return;
+    try {
+      const response = await fetch(`/api/emails/${selectedEmail.id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        selectEmail(null);
+        setMobileView("list");
+        loadInbox();
+      }
+    } catch {
+      // 删除失败时提示
+    }
+  }, [selectedEmail, selectEmail, loadInbox]);
 
   // 当前账户名称
   const currentAccountName = useMemo(() => {
@@ -326,31 +353,77 @@ export default function Home() {
         )}
       >
         {/* 列表头部 */}
-        <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-          <button
-            onClick={toggleSidebar}
-            className="rounded-md p-2 transition-colors hover:bg-muted md:hidden"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-          <h1 className="text-base font-semibold">收件箱</h1>
-          <div className="flex items-center gap-2">
+        {showSearch ? (
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
             <button
               onClick={() => {
-                setComposeMode("new");
-                setComposeEmail(null);
+                setShowSearch(false);
+                setSearchQuery("");
+                loadInbox();
               }}
-              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              className="rounded-md p-2 transition-colors hover:bg-muted"
             >
-              撰写
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
             </button>
-            <span className="text-xs text-muted-foreground">{emails.length} 封邮件</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="搜索邮件..."
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+              autoFocus
+            />
+            <button
+              onClick={handleSearch}
+              className="rounded-md bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleSidebar}
+                className="rounded-md p-2 transition-colors hover:bg-muted md:hidden"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setShowSearch(true)}
+                className="rounded-md p-2 transition-colors hover:bg-muted"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </button>
+            </div>
+            <h1 className="text-base font-semibold">收件箱</h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setComposeMode("new");
+                  setComposeEmail(null);
+                }}
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                撰写
+              </button>
+              <span className="text-xs text-muted-foreground">{emails.length} 封邮件</span>
+            </div>
+          </div>
+        )}
 
         {/* 邮件列表内容 —— 虚拟滚动容器 */}
         <div ref={listRef} onScroll={handleScroll} className="flex-1 overflow-y-auto" role="list" aria-label="邮件列表">
@@ -456,14 +529,26 @@ export default function Home() {
         {selectedEmail ? (
           <>
             {/* 详情头部 —— 移动端包含返回按钮 */}
-            <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-              <button
-                onClick={handleBackToList}
-                className="rounded-md p-2 transition-colors hover:bg-muted md:hidden"
-              >
-                {ICONS.back}
-              </button>
+            <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b px-4">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleBackToList}
+                  className="rounded-md p-2 transition-colors hover:bg-muted md:hidden"
+                >
+                  {ICONS.back}
+                </button>
+              </div>
               <h2 className="truncate text-sm font-semibold">{selectedEmail.subject}</h2>
+              <button
+                onClick={handleDelete}
+                className="rounded-md p-2 text-red-500 transition-colors hover:bg-red-50"
+                title="删除邮件"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+              </button>
             </div>
 
             {/* 详情内容 */}
