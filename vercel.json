@@ -1,15 +1,1 @@
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "env": {
-    "NEXT_PUBLIC_AI_PROVIDER": "@next-public-ai-provider",
-    "NEXT_PUBLIC_AI_API_KEY": "@next-public-ai-api-key",
-    "NEXT_PUBLIC_AI_BASE_URL": "@next-public-ai-base-url",
-    "NEXT_PUBLIC_AI_MODEL": "@next-public-ai-model"
-  }
-}
+
