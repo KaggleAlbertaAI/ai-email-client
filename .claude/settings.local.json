@@ -30,7 +30,8 @@
       "Bash(git remote *)",
       "Bash(git pull *)",
       "Bash(git stash *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(gh api *)"
     ]
   }
 }

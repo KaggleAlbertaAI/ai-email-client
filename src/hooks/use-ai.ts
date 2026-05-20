@@ -17,6 +17,15 @@ export function useAI() {
     try {
       const result = await aiApi.generateSummary(email);
       setSummary(result);
+    } catch {
+      // 摘要失败时设置降级数据
+      const text = email.body?.plain ?? "";
+      setSummary({
+        summary: text.slice(0, 50) + (text.length > 50 ? "..." : ""),
+        keyPoints: [],
+        sentiment: "neutral",
+        requiresResponse: false,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -28,6 +37,13 @@ export function useAI() {
     try {
       const result = await aiApi.generateSmartReplies(email, tone);
       setReplies(result);
+    } catch {
+      // 回复失败时设置降级回复
+      setReplies([
+        { content: "感谢您的邮件，我会尽快处理。", tone: "professional" },
+        { content: "谢谢你的来信，我会尽快回复！", tone: "friendly" },
+        { content: "收到，谢谢。", tone: "concise" },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -39,7 +55,8 @@ export function useAI() {
       const result = await aiApi.classifyMail(email);
       setClassification(result);
     } catch {
-      // 分类失败不影响其他功能
+      // 分类失败时使用默认值
+      setClassification({ category: "normal", priority: 3, requiresResponse: false });
     }
   }, []);
 
