@@ -114,6 +114,9 @@ export interface UnifiedEmail {
   /** 邮件线程 ID（用于会话视图） */
   threadId?: string;
 
+  /** 标签/分类（Gmail labels / Outlook categories） */
+  labels: string[];
+
   /** 来源标识 */
   source: EmailSource;
 

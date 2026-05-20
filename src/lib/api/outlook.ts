@@ -134,6 +134,7 @@ export function convertOutlookToUnified(
     },
     attachments,
     threadId: raw.conversationId,
+    labels: ((raw as unknown) as Record<string, unknown>).categories as string[] | undefined ?? [],
     source: {
       accountId,
       protocol: "graph",

@@ -28,6 +28,7 @@ function getDemoEmails(): UnifiedEmail[] {
       timestamps: { sent: new Date(now - 3600000).toISOString(), received: new Date(now - 3600000).toISOString() },
       flags: { isRead: false, isStarred: true, isDraft: false, hasAttachments: true },
       attachments: [{ id: "att-1", filename: "Q2_Report.pdf", mimeType: "application/pdf", size: 245000, downloadUrl: "" }],
+      labels: ["重要", "工作"],
       source: { accountId: "demo", protocol: "gmail", rawId: "demo-1" },
     },
     {
@@ -41,6 +42,7 @@ function getDemoEmails(): UnifiedEmail[] {
       timestamps: { sent: new Date(now - 7200000).toISOString(), received: new Date(now - 7200000).toISOString() },
       flags: { isRead: false, isStarred: false, isDraft: false, hasAttachments: false },
       attachments: [],
+      labels: ["技术"],
       source: { accountId: "demo", protocol: "gmail", rawId: "demo-2" },
     },
     {
@@ -54,6 +56,7 @@ function getDemoEmails(): UnifiedEmail[] {
       timestamps: { sent: new Date(now - 1800000).toISOString(), received: new Date(now - 1800000).toISOString() },
       flags: { isRead: true, isStarred: false, isDraft: false, hasAttachments: false },
       attachments: [],
+      labels: ["通知"],
       source: { accountId: "demo", protocol: "gmail", rawId: "demo-3" },
     },
     {
@@ -67,6 +70,7 @@ function getDemoEmails(): UnifiedEmail[] {
       timestamps: { sent: new Date(now - 86400000).toISOString(), received: new Date(now - 86400000).toISOString() },
       flags: { isRead: true, isStarred: false, isDraft: false, hasAttachments: false },
       attachments: [],
+      labels: ["社交"],
       source: { accountId: "demo", protocol: "gmail", rawId: "demo-4" },
     },
     {
@@ -80,6 +84,7 @@ function getDemoEmails(): UnifiedEmail[] {
       timestamps: { sent: new Date(now - 43200000).toISOString(), received: new Date(now - 43200000).toISOString() },
       flags: { isRead: false, isStarred: false, isDraft: false, hasAttachments: true },
       attachments: [{ id: "att-2", filename: "PRD_v2.3.docx", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 1024000, downloadUrl: "" }],
+      labels: ["工作", "审批"],
       source: { accountId: "demo", protocol: "graph", rawId: "demo-5" },
     },
   ];

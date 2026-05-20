@@ -133,6 +133,7 @@ export function convertImapToUnified(
     },
     attachments,
     threadId: raw.envelope.messageId || undefined,
+    labels: [],
     source: {
       accountId,
       protocol: "imap",

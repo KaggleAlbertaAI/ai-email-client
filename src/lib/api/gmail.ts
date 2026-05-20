@@ -162,6 +162,7 @@ export function convertGmailToUnified(
     },
     attachments: extractAttachments(raw.payload),
     threadId: raw.threadId,
+    labels: raw.labelIds.filter((l) => !["INBOX", "UNREAD", "STARRED", "DRAFT", "SENT", "IMPORTANT"].includes(l)),
     source: {
       accountId,
       protocol: "gmail",

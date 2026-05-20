@@ -10,6 +10,7 @@ import { PWAInstallPrompt } from "@/components/pwa/install-prompt";
 import { ComposeForm, ComposeMode } from "@/components/mail/compose-form";
 import type { UnifiedEmail, UnifiedAccount } from "@/lib/api/types";
 import { cn, formatDate } from "@/lib/utils";
+import { archiveEmail, updateEmailLabels } from "@/lib/api/mail";
 
 // ---------------------------------------------------------------------------
 //  模拟账户数据 —— 实际项目中从 /api/accounts 获取
@@ -189,6 +190,30 @@ export default function Home() {
       // 删除失败时提示
     }
   }, [selectedEmail, selectEmail, loadInbox]);
+
+  // 归档邮件
+  const handleArchive = useCallback(async () => {
+    if (!selectedEmail) return;
+    try {
+      await archiveEmail(selectedEmail.id);
+      selectEmail(null);
+      setMobileView("list");
+      loadInbox();
+    } catch {
+      // 归档失败时提示
+    }
+  }, [selectedEmail, selectEmail, loadInbox]);
+
+  // 快速添加标签
+  const handleAddLabel = useCallback(async (label: string) => {
+    if (!selectedEmail) return;
+    try {
+      await updateEmailLabels(selectedEmail.id, { add: [label] });
+      loadInbox();
+    } catch {
+      // 标签操作失败时提示
+    }
+  }, [selectedEmail, loadInbox]);
 
   // 当前账户名称
   const currentAccountName = useMemo(() => {
@@ -540,6 +565,17 @@ export default function Home() {
               </div>
               <h2 className="truncate text-sm font-semibold">{selectedEmail.subject}</h2>
               <button
+                onClick={handleArchive}
+                className="rounded-md p-2 transition-colors hover:bg-muted"
+                title="归档邮件"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 8v13H3V8" />
+                  <path d="M1 3h22v5H1z" />
+                  <path d="M10 12h4" />
+                </svg>
+              </button>
+              <button
                 onClick={handleDelete}
                 className="rounded-md p-2 text-red-500 transition-colors hover:bg-red-50"
                 title="删除邮件"
@@ -569,6 +605,29 @@ export default function Home() {
                   </div>
                   <p className="text-xs text-muted-foreground">{selectedEmail.sender.email}</p>
                 </div>
+              </div>
+
+              {/* 标签显示与添加 */}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {selectedEmail.labels?.map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
+                  >
+                    {label}
+                  </span>
+                ))}
+                <button
+                  onClick={() => {
+                    const label = prompt("输入标签名称：");
+                    if (label?.trim()) {
+                      handleAddLabel(label.trim());
+                    }
+                  }}
+                  className="inline-flex items-center rounded-full border border-dashed border-border px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+                >
+                  + 标签
+                </button>
               </div>
 
               {/* 回复/转发操作按钮 */}

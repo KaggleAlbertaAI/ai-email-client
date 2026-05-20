@@ -75,3 +75,28 @@ export async function fetchFolders(accountId: string): Promise<MailFolder[]> {
   }
   return response.json();
 }
+
+/** 归档邮件 — Gmail 移除 INBOX 标签，Outlook 移动到归档文件夹 */
+export async function archiveEmail(emailId: string): Promise<void> {
+  const response = await fetch(`/api/emails/${emailId}/archive`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(`归档失败: ${response.statusText}`);
+  }
+}
+
+/** 管理邮件标签 */
+export async function updateEmailLabels(
+  emailId: string,
+  options: { add?: string[]; remove?: string[] }
+): Promise<void> {
+  const response = await fetch(`/api/emails/${emailId}/labels`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(options),
+  });
+  if (!response.ok) {
+    throw new Error(`标签操作失败: ${response.statusText}`);
+  }
+}
