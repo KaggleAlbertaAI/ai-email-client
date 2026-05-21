@@ -10,12 +10,21 @@ import type {
 } from "@/lib/api/types";
 
 /**
+ * 解码 Gmail API 的 web-safe base64 数据
+ * Gmail 使用 - 替代 +、_ 替代 /，atob 无法直接解析
+ */
+function decodeBase64(data: string): string {
+  const base64 = data.replace(/-/g, "+").replace(/_/g, "/");
+  return decodeURIComponent(escape(atob(base64)));
+}
+
+/**
  * 从嵌套的 MIME parts 树中提取纯文本正文
  * Gmail 的 payload.parts 可能是多层嵌套，需递归查找 text/plain
  */
 function extractPlainText(part: GmailPart): string | undefined {
   if (part.mimeType === "text/plain" && part.body.data) {
-    return atob(part.body.data);
+    return decodeBase64(part.body.data);
   }
   if (part.parts) {
     for (const subPart of part.parts) {
@@ -32,7 +41,7 @@ function extractPlainText(part: GmailPart): string | undefined {
  */
 function extractHtml(part: GmailPart): string | undefined {
   if (part.mimeType === "text/html" && part.body.data) {
-    return atob(part.body.data);
+    return decodeBase64(part.body.data);
   }
   if (part.parts) {
     for (const subPart of part.parts) {
