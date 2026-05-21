@@ -8,6 +8,8 @@ import { convertOutlookToUnified } from "@/lib/api/outlook";
 import { convertImapToUnified } from "@/lib/api/imap";
 import { PAGE_SIZE } from "@/lib/constants";
 
+export const dynamic = "force-dynamic";
+
 // ---------------------------------------------------------------------------
 //  Demo 模式 —— 无 OAuth 令牌时返回演示数据，便于测试和展示
 // ---------------------------------------------------------------------------
@@ -183,12 +185,16 @@ async function fetchGmailMessages(token: string, cursor: string | null, limit: n
   });
   if (cursor) params.set("pageToken", cursor);
 
+  console.log("[emails] Gmail API request with token length:", token.length);
+
   const response = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`,
     {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
+
+  console.log("[emails] Gmail API response status:", response.status);
 
   if (!response.ok) {
     throw new Error(`Gmail API 请求失败: ${response.status} ${response.statusText}`);
@@ -385,18 +391,23 @@ export async function GET(request: NextRequest) {
     const allEmails: UnifiedEmail[] = [];
     const accounts = listConnectedAccounts();
 
+    console.log("[emails] Aggregating emails from", accounts.length, "accounts");
+
     for (const account of accounts) {
       try {
         const result = await fetchMessagesForAccount(account, null, limit, request);
+        console.log("[emails] Account", account.id, "returned", result.data.length, "emails");
         allEmails.push(...result.data);
-      } catch {
+      } catch (err) {
         // 单个账户获取失败不影响其他账户
+        console.error("[emails] Account", account.id, "failed:", err);
         continue;
       }
     }
 
     // 所有账户获取失败时，返回演示数据便于测试和展示
     if (allEmails.length === 0) {
+      console.log("[emails] No real emails found, returning demo data");
       const demoEmails = getDemoEmails();
       return NextResponse.json<PaginatedResponse<UnifiedEmail>>(
         applyFilters({ data: demoEmails, nextCursor: null, hasMore: false }, searchQuery, unreadOnly, limit)
@@ -428,12 +439,14 @@ async function fetchMessagesForAccount(
   switch (account.protocol) {
     case "gmail": {
       const token = extractBearerToken(request, "gmail") ?? getFallbackGmailToken();
+      console.log("[emails] Gmail token from header:", token ? `present (${token.length} chars)` : "none");
       if (!token) {
         throw new Error(
           "缺少 Gmail 访问令牌。请在请求头中携带 Authorization: Bearer <token>，或设置环境变量 GMAIL_ACCESS_TOKEN"
         );
       }
       const { messages, nextCursor } = await fetchGmailMessages(token, cursor, limit);
+      console.log("[emails] Gmail messages fetched:", messages.length);
       const emails = messages.map((msg) => convertGmailToUnified(msg, account.id));
       return { data: emails, nextCursor, hasMore: !!nextCursor };
     }
