@@ -18,36 +18,21 @@ export async function GET() {
 
   const verifier = generateCodeVerifier();
   const challenge = await generateCodeChallenge(verifier);
-  const state = crypto.randomUUID();
+
+  // 将 verifier 编码到 state 中（Google 会原样返回），不再依赖 cookie
+  const randomState = crypto.randomUUID();
+  const combinedState = btoa(`${randomState}:${verifier}`);
 
   const authUrl = new URL(config.authUrl);
   authUrl.searchParams.set("client_id", config.clientId);
   authUrl.searchParams.set("redirect_uri", config.redirectUri);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("scope", config.scopes);
-  authUrl.searchParams.set("state", state);
+  authUrl.searchParams.set("state", combinedState);
   authUrl.searchParams.set("code_challenge", challenge);
   authUrl.searchParams.set("code_challenge_method", "S256");
   authUrl.searchParams.set("access_type", "offline");
   authUrl.searchParams.set("prompt", "consent");
 
-  const response = NextResponse.redirect(authUrl.toString());
-
-  response.cookies.set("gmail_verifier", verifier, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 600,
-    path: "/",
-  });
-
-  response.cookies.set("gmail_state", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 600,
-    path: "/",
-  });
-
-  return response;
+  return NextResponse.redirect(authUrl.toString());
 }

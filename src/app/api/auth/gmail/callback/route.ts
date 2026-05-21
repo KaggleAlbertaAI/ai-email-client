@@ -14,7 +14,6 @@ function redirectTo(url: string, request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const config = getGmailConfig();
-    console.log("[gmail/callback] clientId present:", !!config.clientId);
 
     const { searchParams } = request.nextUrl;
     const code = searchParams.get("code");
@@ -22,28 +21,30 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get("error");
 
     if (error) {
-      console.error("[gmail/callback] OAuth error:", error);
       return redirectTo("/settings?error=gmail_denied", request);
     }
 
     if (!code || !state) {
-      console.error("[gmail/callback] Missing code or state");
       return redirectTo("/settings?error=gmail_missing_params", request);
     }
 
-    const savedState = request.cookies.get("gmail_state")?.value;
-    if (!savedState || state !== savedState) {
-      console.error("[gmail/callback] State mismatch");
+    // 从 state 中提取 verifier（格式：randomState:verifier，base64 编码）
+    let randomState: string;
+    let verifier: string;
+    try {
+      const decoded = atob(state);
+      const [s, v] = decoded.split(":");
+      randomState = s;
+      verifier = v;
+      if (!randomState || !verifier) {
+        throw new Error("Invalid state format");
+      }
+    } catch {
+      console.error("[gmail/callback] Invalid state format");
       return redirectTo("/settings?error=gmail_state_mismatch", request);
     }
 
-    const verifier = request.cookies.get("gmail_verifier")?.value;
-    if (!verifier) {
-      console.error("[gmail/callback] Missing verifier cookie");
-      return redirectTo("/settings?error=gmail_missing_verifier", request);
-    }
-
-    console.log("[gmail/callback] Exchanging code for token...");
+    console.log("[gmail/callback] Verifier extracted from state");
 
     const params = new URLSearchParams({
       code,
@@ -51,6 +52,7 @@ export async function GET(request: NextRequest) {
       client_secret: config.clientSecret,
       redirect_uri: config.redirectUri,
       grant_type: "authorization_code",
+      code_verifier: verifier,
     });
 
     const tokenResponse = await fetch(config.tokenUrl, {
@@ -101,9 +103,6 @@ export async function GET(request: NextRequest) {
       expiresAt,
       email: email ?? undefined,
     });
-
-    response.cookies.delete("gmail_verifier");
-    response.cookies.delete("gmail_state");
 
     console.log("[gmail/callback] Success, redirecting to /settings");
     return response;

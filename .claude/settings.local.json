@@ -35,7 +35,19 @@
       "Bash(npm install *)",
       "Bash(pnpm add *)",
       "Bash(node *)",
-      "Bash(grep -n \"</div>$\" \"C:/Users/36558/ai-email-client/src/app/page.tsx\")"
+      "Bash(grep -n \"</div>$\" \"C:/Users/36558/ai-email-client/src/app/page.tsx\")",
+      "Bash(npx vitest *)",
+      "Bash(pnpm dev *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(pnpm approve-builds *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm build *)",
+      "Bash(curl -s \"http://localhost:3000/api/emails\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s \"http://localhost:3000\")",
+      "Bash(openssl rand *)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh repo *)"
     ]
   }
 }
