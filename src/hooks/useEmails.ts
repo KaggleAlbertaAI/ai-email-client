@@ -22,6 +22,8 @@ export interface UseEmailsReturn {
     accountId?: string;
     unreadOnly?: boolean;
     searchQuery?: string;
+    /** 文件夹类型：inbox | starred | archived */
+    folder?: string;
   }) => Promise<void>;
   /** 加载更多（游标分页） */
   loadMore: () => Promise<void>;
@@ -35,6 +37,8 @@ export interface UseEmailsReturn {
   archiveEmailLocal: (id: string) => void;
   /** 更新邮件标签（本地状态同步） */
   addLabelToLocalEmail: (id: string, label: string) => void;
+  /** 切换星标状态（本地状态同步） */
+  toggleStarLocal: (id: string) => void;
 }
 
 export function useEmails(): UseEmailsReturn {
@@ -52,6 +56,8 @@ export function useEmails(): UseEmailsReturn {
       accountId?: string;
       unreadOnly?: boolean;
       searchQuery?: string;
+      /** 文件夹类型：inbox | starred | archived */
+      folder?: string;
     }) => {
       setLoading(true);
       setError(null);
@@ -61,6 +67,7 @@ export function useEmails(): UseEmailsReturn {
         if (options?.accountId) params.set("accountId", options.accountId);
         if (options?.unreadOnly) params.set("unreadOnly", "true");
         if (options?.searchQuery) params.set("searchQuery", options.searchQuery);
+        if (options?.folder && options.folder !== "inbox") params.set("folder", options.folder);
 
         const response = await fetch(`/api/emails?${params.toString()}`);
         if (!response.ok) {
@@ -143,6 +150,18 @@ export function useEmails(): UseEmailsReturn {
     );
   }, []);
 
+  /** 切换星标状态（本地状态同步） */
+  const toggleStarLocal = useCallback((id: string) => {
+    setEmails((prev) =>
+      prev.map((e) =>
+        e.id === id ? { ...e, flags: { ...e.flags, isStarred: !e.flags.isStarred } } : e
+      )
+    );
+    setSelectedEmail((prev) =>
+      prev?.id === id ? { ...prev, flags: { ...prev.flags, isStarred: !prev.flags.isStarred } } : prev
+    );
+  }, []);
+
   return {
     emails,
     loading,
@@ -157,5 +176,6 @@ export function useEmails(): UseEmailsReturn {
     removeEmail,
     archiveEmailLocal,
     addLabelToLocalEmail,
+    toggleStarLocal,
   };
 }

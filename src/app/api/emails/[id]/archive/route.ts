@@ -2,6 +2,7 @@
 // 归档邮件 — Gmail 移除 INBOX 标签，Outlook 移动到归档文件夹
 
 import { NextRequest, NextResponse } from "next/server";
+import { extractToken } from "@/lib/auth/token-resolver";
 
 /**
  * 归档邮件
@@ -10,13 +11,13 @@ import { NextRequest, NextResponse } from "next/server";
  * Demo 模式: 模拟成功
  */
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
 
-  // Gmail: 移除 INBOX 标签实现归档
-  const gmailToken = process.env.GMAIL_ACCESS_TOKEN ?? null;
+  // 尝试从 cookie/header 获取 Gmail token
+  const gmailToken = extractToken(request, "gmail");
   if (gmailToken) {
     const response = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}/modify`,
@@ -38,8 +39,8 @@ export async function POST(
     return NextResponse.json({ success: true, protocol: "gmail", action: "archived" });
   }
 
-  // Outlook: 移动到归档文件夹
-  const outlookToken = process.env.OUTLOOK_ACCESS_TOKEN ?? null;
+  // Outlook token
+  const outlookToken = extractToken(request, "outlook");
   if (outlookToken) {
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/me/messages/${id}/move`,

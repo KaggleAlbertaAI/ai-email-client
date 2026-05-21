@@ -25,3 +25,16 @@ export function resolveTokenFromCookie(
 ): string | null {
   return getAuthToken(request, provider);
 }
+
+/**
+ * 优先从 middleware 注入的请求头读取，fallback 到 cookie
+ * 综合了两种方式的 token 提取逻辑
+ */
+export function extractToken(
+  request: NextRequest,
+  provider: "gmail" | "outlook"
+): string | null {
+  const fromHeader = resolveToken(request, provider);
+  if (fromHeader) return fromHeader;
+  return resolveTokenFromCookie(request, provider);
+}

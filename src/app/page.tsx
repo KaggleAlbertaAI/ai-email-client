@@ -56,6 +56,7 @@ const FOLDERS = [
   { id: "sent", name: "已发送", icon: "send" },
   { id: "draft", name: "草稿箱", icon: "draft" },
   { id: "starred", name: "星标邮件", icon: "star" },
+  { id: "archived", name: "归档", icon: "archive" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -86,6 +87,13 @@ const ICONS: Record<string, React.ReactNode> = {
   star: (
     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  ),
+  archive: (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 8v13H3V8" />
+      <path d="M1 3h22v5H1z" />
+      <path d="M10 12h4" />
     </svg>
   ),
   chevron: (
@@ -140,7 +148,7 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false);
 
   // 使用 useEmails hook 获取真实数据
-  const { emails, loading, error, selectedEmail, loadInbox, selectEmail, loadMore, removeEmail, archiveEmailLocal, addLabelToLocalEmail } = useEmails();
+  const { emails, loading, error, selectedEmail, loadInbox, selectEmail, loadMore, removeEmail, archiveEmailLocal, addLabelToLocalEmail, toggleStarLocal } = useEmails();
 
   // AI 功能 hook
   const { summary, replies, classification, isLoading: aiLoading, summarize, getSmartReplies, classify } = useAI();
@@ -225,6 +233,24 @@ export default function Home() {
     }
   }, [selectedEmail, archiveEmailLocal, loadInbox]);
 
+  // 切换星标 — 先更新本地状态，再调 API
+  const handleToggleStar = useCallback(async () => {
+    if (!selectedEmail) return;
+    const newStarred = !selectedEmail.flags.isStarred;
+    // 先更新本地状态，用户立即看到变化
+    toggleStarLocal(selectedEmail.id);
+    try {
+      await fetch(`/api/emails/${selectedEmail.id}/star`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ starred: newStarred }),
+      });
+    } catch {
+      // API 失败，回滚本地状态
+      loadInbox();
+    }
+  }, [selectedEmail, toggleStarLocal, loadInbox]);
+
   // 快速添加标签 — 先本地同步，再调 API
   const handleAddLabel = useCallback(async (label: string) => {
     if (!selectedEmail) return;
@@ -268,8 +294,11 @@ export default function Home() {
       } finally {
         setSentLoading(false);
       }
+    } else {
+      // 收件箱、星标、归档等文件夹，调用 /api/emails 并传入 folder 参数
+      loadInbox({ folder: folderId });
     }
-  }, [selectEmail]);
+  }, [selectEmail, loadInbox]);
 
   // 邮件列表滚动容器 ref —— 用于触底加载更多
   const listRef = useRef<HTMLDivElement>(null);
@@ -491,7 +520,9 @@ export default function Home() {
                 </svg>
               </button>
             </div>
-            <h1 className="text-base font-semibold">{activeFolder === "sent" ? "已发送" : "收件箱"}</h1>
+            <h1 className="text-base font-semibold">
+              {activeFolder === "sent" ? "已发送" : activeFolder === "starred" ? "星标邮件" : activeFolder === "archived" ? "归档" : activeFolder === "draft" ? "草稿箱" : "收件箱"}
+            </h1>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => openCompose("new")}
@@ -541,6 +572,26 @@ export default function Home() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStarLocal(email.id);
+                            fetch(`/api/emails/${email.id}/star`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ starred: !email.flags.isStarred }),
+                            }).catch(() => loadInbox());
+                          }}
+                          className={cn(
+                            "shrink-0 transition-colors hover:text-amber-500",
+                            email.flags.isStarred ? "text-amber-500" : "text-muted-foreground/40"
+                          )}
+                          title={email.flags.isStarred ? "取消星标" : "添加星标"}
+                        >
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill={email.flags.isStarred ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                        </button>
                         <span className="shrink-0 text-green-500">{ICONS.send}</span>
                         <span className="truncate text-sm font-medium">
                           {email.recipients.filter((r) => r.type === "to").map((r) => r.email).join(", ")}
@@ -611,6 +662,26 @@ export default function Home() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleStarLocal(email.id);
+                          fetch(`/api/emails/${email.id}/star`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ starred: !email.flags.isStarred }),
+                          }).catch(() => loadInbox());
+                        }}
+                        className={cn(
+                          "shrink-0 transition-colors hover:text-amber-500",
+                          email.flags.isStarred ? "text-amber-500" : "text-muted-foreground/40"
+                        )}
+                        title={email.flags.isStarred ? "取消星标" : "添加星标"}
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill={email.flags.isStarred ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      </button>
                       {email.ai?.requiresResponse && (
                         <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" title="需要回复" />
                       )}
@@ -678,6 +749,18 @@ export default function Home() {
                   <path d="M21 8v13H3V8" />
                   <path d="M1 3h22v5H1z" />
                   <path d="M10 12h4" />
+                </svg>
+              </button>
+              <button
+                onClick={handleToggleStar}
+                className={cn(
+                  "rounded-md p-2 transition-colors hover:bg-muted",
+                  selectedEmail.flags.isStarred ? "text-amber-500" : "text-muted-foreground"
+                )}
+                title={selectedEmail.flags.isStarred ? "取消星标" : "添加星标"}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill={selectedEmail.flags.isStarred ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               </button>
               <button

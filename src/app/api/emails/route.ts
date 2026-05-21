@@ -7,7 +7,7 @@ import { convertGmailToUnified } from "@/lib/api/gmail";
 import { convertOutlookToUnified } from "@/lib/api/outlook";
 import { convertImapToUnified } from "@/lib/api/imap";
 import { PAGE_SIZE } from "@/lib/constants";
-import { resolveTokenFromCookie } from "@/lib/auth/token-resolver";
+import { extractToken } from "@/lib/auth/token-resolver";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +16,9 @@ export const dynamic = "force-dynamic";
 // ---------------------------------------------------------------------------
 
 /** 构造演示邮件数据，用于开发和演示场景 */
-function getDemoEmails(): UnifiedEmail[] {
+function getDemoEmails(folder: string = "inbox"): UnifiedEmail[] {
   const now = Date.now();
-  return [
+  const allEmails: UnifiedEmail[] = [
     {
       id: "demo-1",
       sender: { name: "张三", email: "zhangsan@example.com" },
@@ -90,26 +90,38 @@ function getDemoEmails(): UnifiedEmail[] {
       labels: ["工作", "审批"],
       source: { accountId: "demo", protocol: "graph", rawId: "demo-5" },
     },
+    {
+      id: "demo-6",
+      sender: { name: "GitHub", email: "noreply@github.com" },
+      recipients: [{ name: "我", email: "user@gmail.com", type: "to" as const }],
+      subject: "[ai-email-client] New release v1.2.0",
+      body: {
+        plain: "Release v1.2.0 has been published with updated dependencies and new features. Please review the changelog.",
+      },
+      timestamps: { sent: new Date(now - 172800000).toISOString(), received: new Date(now - 172800000).toISOString() },
+      flags: { isRead: true, isStarred: true, isDraft: false, hasAttachments: false },
+      attachments: [],
+      labels: ["通知"],
+      source: { accountId: "demo", protocol: "gmail", rawId: "demo-6" },
+    },
   ];
+
+  // 按文件夹过滤
+  switch (folder) {
+    case "starred":
+      return allEmails.filter((e) => e.flags.isStarred);
+    case "archived":
+      return allEmails.filter((e) => !e.labels.includes("INBOX"));
+    case "sent":
+      return [];
+    default: // inbox
+      return allEmails;
+  }
 }
 
 // ---------------------------------------------------------------------------
-//  凭据获取 — 从 middleware 注入的请求头读取 OAuth Token
+//  账户信息 — 当前用硬编码模拟，后续替换为数据库 / OAuth session 查询
 // ---------------------------------------------------------------------------
-
-/**
- * 从 middleware 注入的请求头提取 OAuth Token
- * 如果 header 为空，则直接从 httpOnly cookie 读取
- */
-function extractToken(request: NextRequest, provider: "gmail" | "outlook"): string | null {
-  // 先尝试 middleware 注入的 header
-  const headerName = provider === "gmail" ? "x-auth-token-gmail" : "x-auth-token-outlook";
-  const fromHeader = request.headers.get(headerName);
-  if (fromHeader) return fromHeader;
-
-  // 直接从 httpOnly cookie 读取
-  return resolveTokenFromCookie(request, provider);
-}
 
 /**
  * 从环境变量获取默认 Gmail 访问令牌（fallback）
@@ -125,10 +137,6 @@ function getFallbackGmailToken(): string | null {
 function getFallbackOutlookToken(): string | null {
   return process.env.OUTLOOK_ACCESS_TOKEN ?? null;
 }
-
-// ---------------------------------------------------------------------------
-//  账户信息 — 当前用硬编码模拟，后续替换为数据库 / OAuth session 查询
-// ---------------------------------------------------------------------------
 
 const ACCOUNTS: Record<string, UnifiedAccount> = {
   "acc-gmail-1": {
@@ -185,11 +193,26 @@ function listConnectedAccounts(): UnifiedAccount[] {
  *
  * API 文档: https://developers.google.com/gmail/api/reference/rest/v1/users.messages/list
  */
-async function fetchGmailMessages(token: string, cursor: string | null, limit: number) {
+async function fetchGmailMessages(token: string, cursor: string | null, limit: number, folder: string = "inbox") {
   const params = new URLSearchParams({
     maxResults: String(limit),
-    labelIds: "INBOX",
   });
+
+  // 根据文件夹类型设置不同的 labelIds 查询
+  switch (folder) {
+    case "starred":
+      params.set("labelIds", "STARRED");
+      break;
+    case "archived":
+      // 归档 = 不在收件箱中的邮件，使用 -INBOX 排除
+      params.set("labelIds", "-INBOX");
+      break;
+    case "inbox":
+    default:
+      params.set("labelIds", "INBOX");
+      break;
+  }
+
   if (cursor) params.set("pageToken", cursor);
 
   console.log("[emails] Gmail API request with token length:", token.length);
@@ -247,13 +270,21 @@ async function fetchGmailMessages(token: string, cursor: string | null, limit: n
  *
  * API 文档: https://learn.microsoft.com/en-us/graph/api/user-list-messages
  */
-async function fetchOutlookMessages(token: string, _cursor: string | null, limit: number) {
+async function fetchOutlookMessages(token: string, _cursor: string | null, limit: number, folder: string = "inbox") {
   const params = new URLSearchParams({
     $top: String(limit),
     $orderby: "receivedDateTime DESC",
     $select:
       "id,conversationId,subject,body,bodyPreview,sender,toRecipients,ccRecipients,bccRecipients,sentDateTime,receivedDateTime,isRead,isDraft,hasAttachments,flag,internetMessageId,attachments,parentFolderId,changeKey,createdDateTime,lastModifiedDateTime",
   });
+
+  // Outlook 文件夹过滤
+  if (folder === "starred") {
+    params.set("$filter", "isRead eq false or flag/flagStatus ne 'notFlagged'");
+  } else if (folder === "archived") {
+    // Outlook 归档在 Archive 文件夹下
+    params.set("$filter", `parentFolderId ne 'inbox'`);
+  }
 
   const response = await fetch(
     `https://graph.microsoft.com/v1.0/me/messages?${params.toString()}`,
@@ -369,6 +400,7 @@ function applyFilters(
  *
  * 查询参数：
  *   - accountId (可选): 指定账户 ID，不传则返回所有账户的聚合收件箱
+ *   - folder (可选): 文件夹类型 — inbox | sent | starred | archived
  *   - cursor (可选): 游标分页
  *   - limit (可选): 每页数量，默认 PAGE_SIZE
  *
@@ -381,6 +413,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const accountId = searchParams.get("accountId");
+    const folder = searchParams.get("folder") ?? "inbox";
     const cursor = searchParams.get("cursor");
     const limitParam = searchParams.get("limit");
     const searchQuery = searchParams.get("searchQuery");
@@ -390,7 +423,7 @@ export async function GET(request: NextRequest) {
     // 指定了 accountId，只查询该账户
     if (accountId) {
       const account = await lookupAccount(accountId);
-      const emails = await fetchMessagesForAccount(account, cursor, limit, request);
+      const emails = await fetchMessagesForAccount(account, cursor, limit, request, folder);
       return NextResponse.json(applyFilters(emails, searchQuery, unreadOnly, limit));
     }
 
@@ -398,11 +431,11 @@ export async function GET(request: NextRequest) {
     const allEmails: UnifiedEmail[] = [];
     const accounts = listConnectedAccounts();
 
-    console.log("[emails] Aggregating emails from", accounts.length, "accounts");
+    console.log("[emails] Aggregating emails from", accounts.length, "accounts, folder:", folder);
 
     for (const account of accounts) {
       try {
-        const result = await fetchMessagesForAccount(account, null, limit, request);
+        const result = await fetchMessagesForAccount(account, null, limit, request, folder);
         console.log("[emails] Account", account.id, "returned", result.data.length, "emails");
         allEmails.push(...result.data);
       } catch (err) {
@@ -415,7 +448,7 @@ export async function GET(request: NextRequest) {
     // 所有账户获取失败时，返回演示数据便于测试和展示
     if (allEmails.length === 0) {
       console.log("[emails] No real emails found, returning demo data");
-      const demoEmails = getDemoEmails();
+      const demoEmails = getDemoEmails(folder);
       return NextResponse.json<PaginatedResponse<UnifiedEmail>>(
         applyFilters({ data: demoEmails, nextCursor: null, hasMore: false }, searchQuery, unreadOnly, limit)
       );
@@ -441,7 +474,8 @@ async function fetchMessagesForAccount(
   account: UnifiedAccount,
   cursor: string | null,
   limit: number,
-  request: NextRequest
+  request: NextRequest,
+  folder: string = "inbox"
 ): Promise<PaginatedResponse<UnifiedEmail>> {
   switch (account.protocol) {
     case "gmail": {
@@ -454,7 +488,7 @@ async function fetchMessagesForAccount(
           "缺少 Gmail 访问令牌。请先在设置页面连接 Gmail 账户，或设置环境变量 GMAIL_ACCESS_TOKEN"
         );
       }
-      const { messages, nextCursor } = await fetchGmailMessages(finalToken, cursor, limit);
+      const { messages, nextCursor } = await fetchGmailMessages(finalToken, cursor, limit, folder);
       console.log("[emails] Gmail messages fetched:", messages.length);
       const emails = messages.map((msg) => convertGmailToUnified(msg, account.id));
       return { data: emails, nextCursor, hasMore: !!nextCursor };
@@ -469,7 +503,7 @@ async function fetchMessagesForAccount(
           "缺少 Outlook 访问令牌。请先在设置页面连接 Outlook 账户，或设置环境变量 OUTLOOK_ACCESS_TOKEN"
         );
       }
-      const { messages, nextCursor } = await fetchOutlookMessages(finalToken, cursor, limit);
+      const { messages, nextCursor } = await fetchOutlookMessages(finalToken, cursor, limit, folder);
       const emails = messages.map((msg) => convertOutlookToUnified(msg, account.id));
       return { data: emails, nextCursor, hasMore: !!nextCursor };
     }
