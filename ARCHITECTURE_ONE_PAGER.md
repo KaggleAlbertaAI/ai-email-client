@@ -69,7 +69,7 @@ This is the sole interface the frontend consumes. Protocol adapters (`gmail.ts`,
 | Framework | Next.js 14 (App Router) | SSR-ready, zero-config deployment |
 | State Management | Zustand | Lightweight vs Redux, performant vs Context |
 | Styling | Tailwind CSS + CSS variables | Mobile-first, easy theme switching |
-| AI Integration | OpenAI-compatible API | Swappable providers (SiliconFlow, DeepSeek) |
+| AI Integration | OpenAI-compatible API | Swappable providers (SiliconFlow, DeepSeek, Aliyun DashScope) |
 | Data Fetching | Native fetch + Hooks | No over-engineering, upgradeable to SWR later |
 | PWA | Web Manifest + Service Worker | Standard W3C, cross-platform |
 
@@ -97,7 +97,7 @@ src/
 
 | Feature | Input | Output | Provider |
 |---------|-------|--------|----------|
-| Email Summary | UnifiedEmail.body.plain | 50-char Chinese summary + key points + sentiment | SiliconFlow / DeepSeek |
+| Email Summary | UnifiedEmail.body.plain | 50-char Chinese summary + key points + sentiment | SiliconFlow / DeepSeek / Aliyun |
 | Smart Reply | Email context + tone | 3 candidate drafts (professional/friendly/concise) | Same |
 | Prioritization | Email content | requiresResponse flag + sentiment analysis | Same |
 
@@ -116,7 +116,7 @@ src/
 | Delete (Trash) | ✅ | Gmail trash + demo fallback |
 | Archive | ✅ | Gmail remove INBOX label, Outlook move to Archive |
 | Labels / Tags | ✅ | Gmail labels, Outlook categories, UI with prompt |
-| AI Summary | ✅ | Auto-load on email select, batch support |
+| AI Summary | ✅ | Auto-load on email select, batch support, HTML fallback for Gmail |
 | Smart Reply | ✅ | 3 drafts (professional/friendly/concise) |
 | AI Classification & Priority | ✅ | Category badge + needs-reply indicator |
 | PWA Offline | ✅ | next-pwa with Workbox, NetworkFirst/CacheFirst |
