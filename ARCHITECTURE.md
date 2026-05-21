@@ -1,45 +1,45 @@
-# AI Email Client — 架构设计文档
+# AI Email Client — Architecture Design Document
 
-## 1. 项目概述
+## 1. Project Overview
 
-**AI-first 通用邮件客户端 PWA**，支持多协议邮件服务统一接入。用户通过单一界面管理来自不同提供商的邮件，AI 全程辅助阅读与回复。
+**AI-first General Email Client PWA**, supporting unified access to multi-protocol email services. Users manage emails from different providers through a single interface, with AI assistance throughout reading and replying.
 
-### 支持的邮件服务
+### Supported Email Services
 
-| 协议 | 提供商 | 接入方式 |
-|------|--------|----------|
+| Protocol | Provider | Access Method |
+|----------|----------|---------------|
 | REST API | Gmail | Google OAuth 2.0 |
 | REST API | Office 365 (Outlook) | Microsoft OAuth 2.0 |
-| REST API | Yahoo / AOL | IMAP-over-HTTP (第三方代理) |
-| IMAP | 自定义 IMAP 服务器 | 服务端 IMAP 代理 |
+| REST API | Yahoo / AOL | IMAP-over-HTTP (third-party proxy) |
+| IMAP | Custom IMAP Server | Server-side IMAP Proxy |
 
-### 明确排除的范围
+### Explicitly Out of Scope
 
-> 本项目**仅聚焦邮件功能**。不包含日历、联系人管理、任务管理等模块。
+> This project **focuses solely on email functionality**. It does not include calendar, contact management, task management, or similar modules.
 
 ---
 
-## 2. 技术架构
+## 2. Technical Architecture
 
-### 2.1 数据流向
+### 2.1 Data Flow
 
 ```mermaid
 flowchart LR
-    subgraph Client["PWA 客户端 (浏览器)"]
-        UI[React 组件<br/>MailList / MailDetail / AISummary]
-        Hook[自定义 Hooks<br/>useMail / useAI]
+    subgraph Client["PWA Client (Browser)"]
+        UI[React Components<br/>MailList / MailDetail / AISummary]
+        Hook[Custom Hooks<br/>useMail / useAI]
         Store[Zustand Store<br/>mailStore / uiStore]
-        API_Client[API 封装层<br/>lib/api/mail.ts]
+        API_Client[API Layer<br/>lib/api/mail.ts]
     end
 
     subgraph NextJS["Next.js Server (Vercel / Node)"]
         API_Email["API Route<br/>/api/emails/*"]
         API_Auth["API Route<br/>/api/auth/*"]
-        Adapter["协议适配层<br/>lib/adapters/gmail.ts<br/>lib/adapters/imap.ts<br/>lib/adapters/graph.ts"]
-        AI_Svc["AI 服务层<br/>lib/ai/summarize.ts<br/>lib/ai/smart-reply.ts"]
+        Adapter["Protocol Adapter Layer<br/>lib/adapters/gmail.ts<br/>lib/adapters/imap.ts<br/>lib/adapters/graph.ts"]
+        AI_Svc["AI Service Layer<br/>lib/ai/summarize.ts<br/>lib/ai/smart-reply.ts"]
     end
 
-    subgraph External["外部服务"]
+    subgraph External["External Services"]
         Gmail[(Gmail API)]
         Graph[(Microsoft Graph)]
         IMAP[(IMAP Server)]
@@ -66,63 +66,63 @@ flowchart LR
     class Gmail,Graph,IMAP,LLM external
 ```
 
-### 2.2 架构分层说明
+### 2.2 Architecture Layers
 
-| 层级 | 位置 | 职责 |
-|------|------|------|
-| **表现层** | `src/components/` | 纯 UI 组件，不直接调用 API，通过 Hooks 获取数据 |
-| **逻辑层** | `src/hooks/`, `src/store/` | 业务逻辑编排、状态管理、缓存策略 |
-| **API 封装层** | `src/lib/api/` | 前端请求封装，统一错误处理与重试机制 |
-| **路由层** | `src/app/api/` | Next.js Serverless API Routes，鉴权、参数校验、协议分发 |
-| **协议适配层** | `src/lib/adapters/` | 将不同邮件协议的响应转换为统一的 `UnifiedEmail` 模型 |
-| **AI 服务层** | `src/lib/ai/` | AI 摘要、智能回复、邮件分类的 Prompt 编排与结果处理 |
-| **外部服务** | Gmail API / Graph / IMAP / LLM | 第三方服务，不直接暴露给前端 |
+| Layer | Location | Responsibilities |
+|-------|----------|------------------|
+| **Presentation Layer** | `src/components/` | Pure UI components; do not call APIs directly, consume data via Hooks |
+| **Logic Layer** | `src/hooks/`, `src/store/` | Business logic orchestration, state management, caching strategies |
+| **API Wrapper Layer** | `src/lib/api/` | Frontend request encapsulation with unified error handling and retry mechanisms |
+| **Routing Layer** | `src/app/api/` | Next.js Serverless API Routes: authentication, parameter validation, protocol dispatching |
+| **Protocol Adapter Layer** | `src/lib/adapters/` | Translates responses from different email protocols into the unified `UnifiedEmail` model |
+| **AI Service Layer** | `src/lib/ai/` | Prompt orchestration and result processing for AI summaries, smart replies, and email classification |
+| **External Services** | Gmail API / Graph / IMAP / LLM | Third-party services; never exposed directly to the frontend |
 
 ---
 
-## 3. 统一数据模型
+## 3. Unified Data Model
 
-不管底层邮件协议是什么，前端和 API 层统一使用以下接口。这是整个架构的核心契约。
+Regardless of the underlying email protocol, the frontend and API layers use the following interfaces as the single source of truth. This is the core contract of the entire architecture.
 
 ```typescript
-/** 统一邮件数据模型 — 前端拿到的唯一数据结构 */
+/** Unified email data model — the only data structure the frontend works with */
 export interface UnifiedEmail {
-  /** 全局唯一标识 (UUID) */
+  /** Globally unique identifier (UUID) */
   id: string;
 
-  /** 发件人信息 */
+  /** Sender information */
   sender: {
     name?: string;
     email: string;
   };
 
-  /** 收件人列表 */
+  /** Recipient list */
   recipients: Array<{
     name?: string;
     email: string;
     type: "to" | "cc" | "bcc";
   }>;
 
-  /** 邮件主题 */
+  /** Email subject */
   subject: string;
 
-  /** 邮件正文 */
+  /** Email body */
   body: {
-    /** 纯文本版本 (默认展示) */
+    /** Plain text version (default display) */
     plain: string;
-    /** HTML 版本 (富文本渲染) */
+    /** HTML version (rich text rendering) */
     html?: string;
   };
 
-  /** 时间戳 */
+  /** Timestamps */
   timestamps: {
-    /** 发送时间 (ISO 8601) */
+    /** Sent time (ISO 8601) */
     sent: string;
-    /** 接收时间 (ISO 8601) */
+    /** Received time (ISO 8601) */
     received: string;
   };
 
-  /** 状态标记 */
+  /** Status flags */
   flags: {
     isRead: boolean;
     isStarred: boolean;
@@ -130,7 +130,7 @@ export interface UnifiedEmail {
     hasAttachments: boolean;
   };
 
-  /** 附件列表 */
+  /** Attachment list */
   attachments: Array<{
     id: string;
     filename: string;
@@ -140,33 +140,33 @@ export interface UnifiedEmail {
     thumbnailUrl?: string;
   }>;
 
-  /** 邮件线程 ID (用于会话视图) */
+  /** Thread ID (for conversation view) */
   threadId?: string;
 
-  /** 来源标识 (用于调试和日志) */
+  /** Source identifier (for debugging and logging) */
   source: {
-    /** 账户 ID */
+    /** Account ID */
     accountId: string;
-    /** 协议类型 */
+    /** Protocol type */
     protocol: "gmail" | "graph" | "imap";
-    /** 原始协议 ID */
+    /** Original protocol-specific ID */
     rawId: string;
   };
 
-  /** AI 生成的数据 (懒加载) */
+  /** AI-generated data (lazy-loaded) */
   ai?: {
-    /** 邮件摘要 */
+    /** Email summary */
     summary?: string;
-    /** 关键要点 */
+    /** Key points */
     keyPoints?: string[];
-    /** 情感倾向 */
+    /** Sentiment */
     sentiment?: "positive" | "neutral" | "negative";
-    /** 是否需要回复 */
+    /** Whether a reply is expected */
     requiresResponse?: boolean;
   };
 }
 
-/** 统一账户模型 */
+/** Unified account model */
 export interface UnifiedAccount {
   id: string;
   name: string;
@@ -178,70 +178,70 @@ export interface UnifiedAccount {
 }
 ```
 
-### 3.1 协议适配规则
+### 3.1 Protocol Adapter Rules
 
 ```
-Gmail API 响应  ─┐
-                 ├──> adapter.normalize() ──> UnifiedEmail
-Graph API 响应  ─┘                           (统一格式)
-IMAP 原始数据   ─┘
+Gmail API response  ─┐
+                      ├──> adapter.normalize() ──> UnifiedEmail
+Graph API response  ─┘                            (unified format)
+IMAP raw data       ─┘
 ```
 
-每个协议适配器 (`lib/adapters/gmail.ts`, `lib/adapters/graph.ts`, `lib/adapters/imap.ts`) 负责将各自协议的原始响应转换为 `UnifiedEmail`。
+Each protocol adapter (`lib/adapters/gmail.ts`, `lib/adapters/graph.ts`, `lib/adapters/imap.ts`) is responsible for converting raw responses from its respective protocol into `UnifiedEmail`.
 
 ---
 
-## 4. 核心功能模块设计
+## 4. Core Feature Module Design
 
-### 4.1 统一收件箱 (Unified Inbox)
+### 4.1 Unified Inbox
 
-- **目标**：将来自不同协议的邮件合并为单一时间线视图
-- **策略**：服务端按 `timestamps.received` 排序后返回，前端虚拟列表渲染
-- **分页**：游标分页 (`cursor-based pagination`)，每次加载 20 条
-- **实时更新**：使用 Server-Sent Events (SSE) 推送新邮件通知
-- **缓存**：SWR / React Query 管理请求缓存，避免重复请求
+- **Goal**: Merge emails from different protocols into a single timeline view
+- **Strategy**: Server-side sorting by `timestamps.received`, frontend renders with virtualized list
+- **Pagination**: Cursor-based pagination, loading 20 items per page
+- **Real-time updates**: Server-Sent Events (SSE) for push notifications of new emails
+- **Caching**: SWR / React Query for request caching to avoid duplicate requests
 
-### 4.2 账户切换 (Account Switcher)
+### 4.2 Account Switcher
 
-- **存储**：账户列表缓 Zustand store，OAuth token 通过 HttpOnly Cookie 存储
-- **UI**：侧边栏顶部可展开的账户选择器，支持快速切换和"全部账户"聚合视图
-- **认证**：Google OAuth 2.0 / Microsoft OAuth 2.0，token 自动刷新
-- **IMAP 接入**：通过用户手动输入的 IMAP/SMTP 凭据存储在服务端加密 vault
+- **Storage**: Account list cached in Zustand store; OAuth tokens stored in HttpOnly cookies
+- **UI**: Expandable account selector at the top of the sidebar, supporting quick switching and an "All Accounts" aggregated view
+- **Authentication**: Google OAuth 2.0 / Microsoft OAuth 2.0 with automatic token refresh
+- **IMAP Integration**: IMAP/SMTP credentials entered manually by the user are stored in a server-side encrypted vault
 
-### 4.3 AI 智能摘要 (AI Summary)
+### 4.3 AI Summary
 
-- **触发**：用户点击"AI 摘要"按钮时按需生成，非预生成（控制成本）
-- **流程**：
-  1. 前端请求 → `/api/ai/summarize` → 传入邮件 `id`
-  2. 服务端通过 `UnifiedEmail.body.plain` 构建 Prompt
-  3. 调用 LLM API，返回摘要 + 关键要点 + 情感分析
-  4. 结果缓存 24 小时，相同邮件不重复调用
-- **Prompt 策略**：系统 Prompt 固定为中文，要求输出 JSON 格式的结构化结果
+- **Trigger**: Generated on demand when the user clicks the "AI Summary" button; not pre-generated (to control costs)
+- **Flow**:
+  1. Frontend request → `/api/ai/summarize` → passes the email `id`
+  2. Server builds the prompt from `UnifiedEmail.body.plain`
+  3. Calls the LLM API, returns summary + key points + sentiment analysis
+  4. Results are cached for 24 hours; the same email is not processed repeatedly
+- **Prompt Strategy**: System prompt outputs structured JSON results
 
-### 4.4 智能回复草稿 (Smart Reply)
+### 4.4 Smart Reply Drafts
 
-- **触发**：打开未读邮件时自动预加载 3 条候选回复
-- **策略**：
-  - 简短回复（确认/感谢/拒绝）→ 快速点击
-  - 长回复草稿 → 点击后进入撰写编辑器
-- **上下文**：Prompt 包含原始邮件正文 + 发件人 + 用户历史回复风格
-- **安全**：AI 生成的回复默认在草稿中，用户确认后发送
+- **Trigger**: Automatically preloads 3 candidate replies when an unread email is opened
+- **Strategy**:
+  - Short replies (confirm / thank / decline) → quick-click buttons
+  - Long reply drafts → opens the compose editor on click
+- **Context**: Prompt includes the original email body, sender, and the user's historical reply style
+- **Safety**: AI-generated replies are placed in draft by default; the user must confirm before sending
 
-### 4.5 PWA 离线支持
+### 4.5 PWA Offline Support
 
-- **Service Worker**：next-pwa 配置，缓存关键路由和静态资源
-- **离线队列**：撰写中的邮件存入 IndexedDB，恢复联网后自动发送
-- **离线阅读**：最近 50 封邮件缓存到 IndexedDB，支持离线查看
+- **Service Worker**: Configured via next-pwa to cache critical routes and static assets
+- **Offline Queue**: Composed emails are stored in IndexedDB and sent automatically when connectivity is restored
+- **Offline Reading**: The latest 50 emails are cached in IndexedDB for offline viewing
 
 ---
 
-## 5. 技术决策记录
+## 5. Technical Decision Records
 
-| 决策 | 选择 | 理由 |
-|------|------|------|
-| 状态管理 | Zustand | 比 Redux 轻量，比 Context 高效，API 简单 |
-| API 数据获取 | 原生 fetch + React Hooks | 不过度设计，后续可替换为 SWR/TanStack Query |
-| 服务端部署 | Vercel (Serverless) | Next.js 原生支持，零运维 |
-| AI 服务 | 独立 API 调用 (非本地模型) | 控制复杂度，后续可替换 Provider |
-| PWA 离线 | IndexedDB + next-pwa | 标准方案，兼容性好 |
-| 认证 | HttpOnly Cookie + OAuth 2.0 | 安全性高于 localStorage token |
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| State Management | Zustand | Lighter than Redux, more efficient than Context, simpler API |
+| API Data Fetching | Native fetch + React Hooks | Avoids over-engineering; can be swapped for SWR/TanStack Query later |
+| Server Deployment | Vercel (Serverless) | Native Next.js support, zero ops overhead |
+| AI Service | Independent API calls (not local models) | Reduces complexity; provider can be swapped later |
+| PWA Offline | IndexedDB + next-pwa | Standard solution with good compatibility |
+| Authentication | HttpOnly Cookie + OAuth 2.0 | More secure than localStorage tokens |

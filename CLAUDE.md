@@ -1,107 +1,107 @@
-# AI-First 通用邮件客户端 PWA
+# AI-First Universal Email Client PWA
 
-## 项目概述
+## Project Overview
 
-这是一个 **AI-first 通用邮件客户端 PWA**（Progressive Web App），旨在通过 AI 能力提升用户的邮件处理效率。
+This is an **AI-first universal email client PWA** (Progressive Web App), designed to enhance users' email handling efficiency through AI capabilities.
 
-### 核心功能
+### Core Features
 
-- 统一收件箱：聚合多邮箱账户，单一视图管理
-- AI 邮件摘要：自动提炼长邮件核心要点
-- 智能回复：基于上下文生成回复建议
-- 邮件分类与优先级排序
-- PWA 离线阅读与推送通知
+- Unified Inbox: Aggregate multiple email accounts into a single management view
+- AI Email Summaries: Automatically extract key points from lengthy emails
+- Smart Reply: Generate reply suggestions based on context
+- Email Classification & Priority Sorting
+- PWA Offline Reading & Push Notifications
 
-### 明确排除的范围
+### Explicitly Out of Scope
 
-> 本项目**仅聚焦邮件功能**。不包含日历、联系人管理、任务管理等模块。任何偏离邮件核心体验的需求都应拒绝或标记为未来迭代。
-
----
-
-## 核心技术栈
-
-| 领域         | 技术选型                                        |
-| ------------ | ----------------------------------------------- |
-| 框架         | Next.js 14+ (App Router)                        |
-| 语言         | TypeScript (严格模式)                           |
-| UI 库        | Tailwind CSS + Shadcn/UI                        |
-| 状态管理     | Zustand（全局状态） + React Context（局部共享） |
-| PWA 方案     | next-pwa (基于 workbox)                         |
-| 包管理器     | pnpm                                            |
-| 代码格式化   | Prettier + ESLint                               |
-| 测试         | Vitest + React Testing Library                  |
-| 数据库/ORM   | Prisma (如需本地缓存)                           |
+> This project **focuses solely on email functionality**. It does not include calendar, contact management, task management, or other similar modules. Any requirement that deviates from the core email experience should be declined or flagged as a future iteration.
 
 ---
 
-## 目录结构规范
+## Core Tech Stack
+
+| Area             | Technology Selection                              |
+| ---------------- | ------------------------------------------------- |
+| Framework        | Next.js 14+ (App Router)                          |
+| Language         | TypeScript (strict mode)                          |
+| UI Library       | Tailwind CSS + Shadcn/UI                          |
+| State Management | Zustand (global state) + React Context (local shared) |
+| PWA Solution     | next-pwa (powered by Workbox)                     |
+| Package Manager  | pnpm                                              |
+| Code Formatting  | Prettier + ESLint                                 |
+| Testing          | Vitest + React Testing Library                    |
+| Database/ORM     | Prisma (if local caching is needed)               |
+
+---
+
+## Directory Structure Specification
 
 ```
 ├── src/
-│   ├── app/                    # Next.js App Router: 路由与页面
-│   │   ├── (auth)/             # 认证相关页面 (login, register, oauth-callback)
-│   │   ├── (mail)/             # 邮件核心页面
-│   │   │   ├── inbox/          # 收件箱
-│   │   │   ├── [mailboxId]/    # 多账户路由
-│   │   │   ├── compose/        # 撰写邮件
-│   │   │   └── settings/       # 邮件设置
-│   │   ├── api/                # API Routes (Next.js 服务端接口)
-│   │   ├── layout.tsx          # 根布局
-│   │   └── page.tsx            # 首页
+│   ├── app/                    # Next.js App Router: routes and pages
+│   │   ├── (auth)/             # Authentication-related pages (login, register, oauth-callback)
+│   │   ├── (mail)/             # Core email pages
+│   │   │   ├── inbox/          # Inbox
+│   │   │   ├── [mailboxId]/    # Multi-account routing
+│   │   │   ├── compose/        # Compose email
+│   │   │   └── settings/       # Email settings
+│   │   ├── api/                # API Routes (Next.js server-side endpoints)
+│   │   ├── layout.tsx          # Root layout
+│   │   └── page.tsx            # Home page
 │   │
-│   ├── components/             # UI 组件
-│   │   ├── ui/                 # Shadcn/UI 基础组件 (button, dialog, dropdown...)
-│   │   ├── mail/               # 邮件业务组件 (MailList, MailDetail, Compose...)
-│   │   ├── layout/             # 布局组件 (Sidebar, Header, MobileNav...)
-│   │   └── ai/                 # AI 功能组件 (AISummary, SmartReply...)
+│   ├── components/             # UI Components
+│   │   ├── ui/                 # Shadcn/UI base components (button, dialog, dropdown...)
+│   │   ├── mail/               # Email business components (MailList, MailDetail, Compose...)
+│   │   ├── layout/             # Layout components (Sidebar, Header, MobileNav...)
+│   │   └── ai/                 # AI feature components (AISummary, SmartReply...)
 │   │
-│   ├── hooks/                  # 自定义 React Hooks
-│   │   ├── use-mail.ts         # 邮件操作 hook
-│   │   ├── use-ai.ts           # AI 功能 hook
-│   │   └── use-pwa.ts          # PWA 相关 hook (install prompt, offline...)
+│   ├── hooks/                  # Custom React Hooks
+│   │   ├── use-mail.ts         # Email operations hook
+│   │   ├── use-ai.ts           # AI features hook
+│   │   └── use-pwa.ts          # PWA-related hooks (install prompt, offline...)
 │   │
-│   ├── lib/                    # 工具函数与业务逻辑
-│   │   ├── api/                # 所有 API 请求封装
-│   │   │   ├── mail.ts         # 邮件 API (fetch, send, delete...)
+│   ├── lib/                    # Utility functions and business logic
+│   │   ├── api/                # All API request wrappers
+│   │   │   ├── mail.ts         # Mail API (fetch, send, delete...)
 │   │   │   ├── ai.ts           # AI API (summarize, reply suggestion...)
-│   │   │   └── account.ts      # 账户 API (connect, disconnect...)
-│   │   ├── store/              # Zustand store
-│   │   │   ├── mail-store.ts   # 邮件状态
-│   │   │   └── ui-store.ts     # UI 状态 (sidebar, theme...)
-│   │   ├── utils.ts            # 通用工具函数
-│   │   └── constants.ts        # 全局常量与配置
+│   │   │   └── account.ts      # Account API (connect, disconnect...)
+│   │   ├── store/              # Zustand stores
+│   │   │   ├── mail-store.ts   # Email state
+│   │   │   └── ui-store.ts     # UI state (sidebar, theme...)
+│   │   ├── utils.ts            # Common utility functions
+│   │   └── constants.ts        # Global constants and configuration
 │   │
-│   ├── types/                  # TypeScript 类型定义
-│   │   ├── mail.ts             # 邮件相关类型
-│   │   ├── ai.ts               # AI 相关类型
-│   │   └── index.ts            # 类型统一导出
+│   ├── types/                  # TypeScript type definitions
+│   │   ├── mail.ts             # Mail-related types
+│   │   ├── ai.ts               # AI-related types
+│   │   └── index.ts            # Unified type exports
 │   │
-│   └── styles/                 # 全局样式
+│   └── styles/                 # Global styles
 │       └── globals.css
 │
-├── public/                     # 静态资源 (PWA icons, manifest...)
-├── prisma/                     # 数据库 schema (如需要)
-└── tests/                      # 测试文件
+├── public/                     # Static assets (PWA icons, manifest...)
+├── prisma/                     # Database schema (if needed)
+└── tests/                      # Test files
     ├── unit/
     └── e2e/
 ```
 
 ---
 
-## 代码风格与规范
+## Code Style & Conventions
 
-### 基本原则
+### Basic Principles
 
-1. **组件必须使用函数式写法与 Hooks**，禁止使用 Class 组件。
-2. **所有 API 请求必须封装在 `src/lib/api/` 目录下**，禁止在组件中直接调用 `fetch` 或外部 SDK。
-3. **TypeScript 严格模式必须开启**，禁止使用 `any`，不确定的类型用 `unknown` 并做类型守卫。
-4. **变量和函数命名必须语义化**，关键逻辑必须添加**中文注释**。
-5. **遇到复杂逻辑时，必须先输出伪代码或实现计划**，经确认后再写具体代码。
+1. **Components must use functional style with Hooks**; class components are prohibited.
+2. **All API requests must be encapsulated under `src/lib/api/`**; do not call `fetch` or external SDKs directly within components.
+3. **TypeScript strict mode must be enabled**; `any` is prohibited. Use `unknown` for uncertain types and apply proper type guards.
+4. **Variable and function names must be semantic**; key logic must include **Chinese comments**.
+5. **When encountering complex logic, output pseudocode or an implementation plan first**, and only write concrete code after confirmation.
 
-### 组件规范
+### Component Conventions
 
 ```tsx
-// ✅ 正确: 函数式组件 + 类型标注
+// ✅ Correct: functional component + type annotations
 interface MailItemProps {
   mail: Mail;
   onSelect: (id: string) => void;
@@ -123,26 +123,26 @@ export function MailItem({ mail, onSelect }: MailItemProps) {
 }
 ```
 
-### API 调用规范
+### API Call Conventions
 
 ```typescript
 // src/lib/api/mail.ts
-// 所有 API 请求集中管理，便于统一处理拦截器、错误重试、离线缓存等逻辑
+// All API requests are centrally managed for unified handling of interceptors, error retries, offline caching, etc.
 
 export async function fetchInboxMail(accountId: string, page: number = 1): Promise<Mail[]> {
   const response = await fetch(`/api/mail/inbox?accountId=${accountId}&page=${page}`);
   if (!response.ok) {
-    throw new APIError(`获取邮件失败: ${response.statusText}`, response.status);
+    throw new APIError(`Failed to fetch email: ${response.statusText}`, response.status);
   }
   return response.json();
 }
 ```
 
-### 状态管理规范
+### State Management Conventions
 
 ```typescript
 // src/lib/store/mail-store.ts
-// 使用 Zustand 管理全局邮件状态
+// Use Zustand to manage global email state
 
 interface MailStore {
   mails: Mail[];
@@ -161,82 +161,82 @@ export const useMailStore = create<MailStore>((set) => ({
 }));
 ```
 
-### 注释规范
+### Comment Conventions
 
-- 关键业务逻辑必须添加**中文注释**，说明「为什么」这么做，而非「做了什么」。
-- 禁止无意义的行内注释（如 `// 设置状态`）。
-- 复杂算法、边界处理、临时 workaround 必须写明原因。
+- Key business logic must include **Chinese comments** that explain *why* something is done, not *what* was done.
+- Meaningless inline comments (e.g., `// set state`) are prohibited.
+- Complex algorithms, edge-case handling, and temporary workarounds must document the reasoning.
 
 ```typescript
-// ✅ 好的注释: 解释动机
-// IMAP 协议返回的日期格式不一致，统一转换为 ISO 8601
+// ✅ Good comment: explains the motivation
+// IMAP protocol returns inconsistent date formats; normalize to ISO 8601
 const normalizedDate = normalizeIMAPDate(rawDate);
 
-// ❌ 坏注释: 重复代码本身
-const mails = data.mails; // 获取邮件列表
+// ❌ Bad comment: merely restates the code itself
+const mails = data.mails; // get the email list
 ```
 
 ---
 
-## PWA 专项要求
+## PWA-Specific Requirements
 
-1. **移动端优先**：所有组件必须考虑移动端响应式布局，最小触摸目标 44x44px。
-2. **离线支持**：使用 Workbox 缓存关键页面和邮件列表，支持离线阅读。
-3. **安装引导**：提供 PWA 安装引导组件，首次访问时提示用户添加到主屏幕。
-4. **推送通知**：新邮件到达时触发 Web Push 通知。
-5. **性能指标**：首次内容绘制 (FCP) < 1.5s，可交互时间 (TTI) < 3s。
+1. **Mobile First**: All components must consider mobile-responsive layout; minimum touch target is 44x44px.
+2. **Offline Support**: Use Workbox to cache key pages and email lists, enabling offline reading.
+3. **Install Prompt**: Provide a PWA installation prompt component that asks users to add the app to their home screen on first visit.
+4. **Push Notifications**: Trigger Web Push notifications when new emails arrive.
+5. **Performance Targets**: First Contentful Paint (FCP) < 1.5s, Time to Interactive (TTI) < 3s.
 
 ---
 
-## AI 协作指令
+## AI Collaboration Guidelines
 
-### 生成代码要求
+### Code Generation Requirements
 
-1. **所有生成的代码必须是可运行的**，不能包含占位符、TODO 或不完整的逻辑。
-2. 代码必须考虑**移动端 PWA 的响应式体验**，使用 Tailwind 的响应式工具类。
-3. 生成组件时，同时生成对应的类型定义和导出语句。
-4. 使用 Shadcn/UI 组件时，确保组件已正确安装并配置。
+1. **All generated code must be runnable**; it must not contain placeholders, TODOs, or incomplete logic.
+2. Code must account for **mobile PWA responsive experience**, using Tailwind responsive utility classes.
+3. When generating components, also generate the corresponding type definitions and export statements.
+4. When using Shadcn/UI components, ensure they are properly installed and configured.
 
-### 开发流程
+### Development Workflow
 
 ```
-用户提出需求
-  → AI 输出实现计划 / 伪代码
-  → 用户确认方案
-  → AI 生成完整可运行代码
-  → 用户测试 & 反馈
-  → 迭代优化
+User submits a requirement
+  → AI outputs an implementation plan / pseudocode
+  → User confirms the approach
+  → AI generates complete, runnable code
+  → User tests & provides feedback
+  → Iterative refinement
 ```
 
-### 约束提醒
+### Constraint Reminders
 
-- 如果需求涉及日历、联系人等**排除范围**的功能，应主动提醒用户并建议搁置。
-- 如果需求涉及尚未安装的依赖或库，应先确认安装方式。
-- 每次修改代码后，简要说明改动内容和影响范围。
-
----
-
-## 提交规范
-
-- `feat:` 新功能
-- `fix:` 修复 bug
-- `refactor:` 重构（不改变功能行为）
-- `style:` 代码格式调整（不影响逻辑）
-- `docs:` 文档更新
-- `test:` 测试相关
-- `chore:` 构建、依赖更新等杂项
+- If a requirement involves calendar, contacts, or other **out-of-scope** features, proactively remind the user and suggest shelving the request.
+- If a requirement involves dependencies or libraries not yet installed, confirm the installation approach first.
+- After each code change, briefly describe what was modified and the impact.
 
 ---
 
-## 快速开始
+## Commit Conventions
+
+- `feat:` new feature
+- `fix:` bug fix
+- `refactor:` refactoring (no change in functional behavior)
+- `style:` code formatting adjustments (no impact on logic)
+- `docs:` documentation updates
+- `test:` testing-related changes
+- `chore:` build, dependency updates, and other miscellaneous tasks
+
+---
+
+## Quick Start
 
 ```bash
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 启动开发服务器
+# Start the development server
 pnpm dev
 
-# 构建生产版本
+# Build the production version
 pnpm build
 ```

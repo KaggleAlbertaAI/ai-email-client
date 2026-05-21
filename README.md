@@ -1,124 +1,124 @@
 # AI Email Client
 
-> AI-first 通用邮件客户端 PWA
+> AI-First Universal Email Client PWA
 
-基于 Next.js 14 构建的 AI 增强型邮件客户端，支持多账户统一收件箱、AI 智能摘要与智能回复，完美适配移动端 PWA 体验。
-
----
-
-## 项目简介
-
-**AI Email Client** 是一个面向国内用户的通用邮件客户端 PWA（Progressive Web App）。通过 AI 能力大幅提升邮件处理效率：
-
-- **统一收件箱**：将来自 Gmail、Outlook、自定义 IMAP 的邮件聚合到单一时间线视图
-- **AI 辅助阅读**：自动为每封邮件生成 50 字以内的中文结构化摘要
-- **智能回复**：根据邮件内容和指定语气，一键生成 3 条候选回复草稿
-- **PWA 离线支持**：Service Worker 缓存关键资源，支持离线阅读
-
-> 本项目**仅聚焦邮件功能**，不包含日历、联系人管理、任务管理等模块。
+An AI-enhanced email client built with Next.js 14, supporting multi-account unified inbox, AI smart summaries, and smart replies, with a perfect mobile PWA experience.
 
 ---
 
-## 核心功能
+## Overview
 
-| 功能 | 说明 |
-|------|------|
-| 统一收件箱 | 多协议聚合（Gmail / Outlook / IMAP），按时间线排序 |
-| 多账户切换 | 侧边栏顶部下拉菜单，支持"所有账户"聚合视图 |
-| 三栏布局 | 左侧文件夹导航 / 中间邮件列表 / 右侧详情面板 |
-| AI 邮件摘要 | 50 字以内中文摘要 + 关键要点 + 情感分析 |
-| 智能回复 | 3 条候选回复（专业/友好/简洁），支持语气切换 |
-| 响应式设计 | 移动端单列切换，桌面端三栏自适应 |
-| 无限滚动 | 游标分页加载，触底自动获取更多邮件 |
-| 离线支持 | Service Worker 缓存静态资源 |
+**AI Email Client** is a universal email client PWA (Progressive Web App). It significantly improves email processing efficiency through AI capabilities:
+
+- **Unified Inbox**: Aggregates emails from Gmail, Outlook, and custom IMAP into a single timeline view
+- **AI-Assisted Reading**: Automatically generates a structured summary of 50 words or less for each email
+- **Smart Reply**: Generate 3 candidate reply drafts with one click, based on email content and a chosen tone
+- **PWA Offline Support**: Service Worker caches key resources for offline reading
+
+> This project **focuses solely on email functionality**. It does not include calendar, contact management, task management, or other modules.
 
 ---
 
-## 技术栈
+## Core Features
 
-| 层级 | 技术 |
-|------|------|
-| 框架 | **Next.js 14** (App Router) |
-| 语言 | **TypeScript** (严格模式) |
-| 样式 | **Tailwind CSS** + Shadcn/UI 变量体系 |
-| 状态管理 | **Zustand** |
-| AI 集成 | 硅基流动 / DeepSeek（OpenAI 兼容 API） |
+| Feature | Description |
+|---------|-------------|
+| Unified Inbox | Multi-protocol aggregation (Gmail / Outlook / IMAP), sorted by timeline |
+| Multi-Account Switching | Sidebar top dropdown menu, supports "All Accounts" aggregated view |
+| Three-Column Layout | Left folder navigation / Center mail list / Right detail panel |
+| AI Mail Summary | Summary of 50 words or less + key points + sentiment analysis |
+| Smart Reply | 3 candidate replies (professional / friendly / concise), with tone switching |
+| Responsive Design | Single-column switching on mobile, three-column adaptive on desktop |
+| Infinite Scroll | Cursor-based pagination, auto-loads more emails on reaching the bottom |
+| Offline Support | Service Worker caches static assets |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | **Next.js 14** (App Router) |
+| Language | **TypeScript** (strict mode) |
+| Styling | **Tailwind CSS** + Shadcn/UI variable system |
+| State Management | **Zustand** |
+| AI Integration | SiliconFlow / DeepSeek (OpenAI-compatible API) |
 | PWA | Web App Manifest + Service Worker |
-| 包管理 | **pnpm** |
+| Package Manager | **pnpm** |
 
 ---
 
-## 项目结构
+## Project Structure
 
 ```
 ai-email-client/
 ├── src/
 │   ├── app/                    # Next.js App Router
-│   │   ├── page.tsx            # 主页面：统一收件箱（三栏布局）
-│   │   ├── layout.tsx          # 根布局
-│   │   ├── globals.css         # 全局样式 + Shadcn/UI CSS 变量
+│   │   ├── page.tsx            # Main page: Unified Inbox (three-column layout)
+│   │   ├── layout.tsx          # Root layout
+│   │   ├── globals.css         # Global styles + Shadcn/UI CSS variables
 │   │   ├── api/                # Server API Routes
-│   │   │   ├── emails/route.ts       # 统一收件箱接口
-│   │   │   └── emails/[id]/route.ts  # 邮件详情接口
-│   │   └── inbox/page.tsx      # 收件箱路由
+│   │   │   ├── emails/route.ts       # Unified inbox endpoint
+│   │   │   └── emails/[id]/route.ts  # Mail detail endpoint
+│   │   └── inbox/page.tsx      # Inbox route
 │   │
-│   ├── components/             # React 组件
-│   │   ├── ui/                 # 基础 UI 组件（按钮、对话框等）
-│   │   ├── mail/               # 邮件业务组件
-│   │   │   ├── mail-list.tsx   # 邮件列表
-│   │   │   └── mail-detail.tsx # 邮件详情
-│   │   ├── ai/                 # AI 功能组件
-│   │   │   ├── ai-summary.tsx  # AI 摘要展示
-│   │   │   └── smart-reply.tsx # 智能回复
-│   │   └── layout/             # 布局组件
-│   │       ├── sidebar.tsx     # 侧边栏
-│   │       └── mobile-nav.tsx  # 移动端导航
+│   ├── components/             # React Components
+│   │   ├── ui/                 # Base UI components (button, dialog, etc.)
+│   │   ├── mail/               # Mail business components
+│   │   │   ├── mail-list.tsx   # Mail list
+│   │   │   └── mail-detail.tsx # Mail detail
+│   │   ├── ai/                 # AI feature components
+│   │   │   ├── ai-summary.tsx  # AI summary display
+│   │   │   └── smart-reply.tsx # Smart reply
+│   │   └── layout/             # Layout components
+│   │       ├── sidebar.tsx     # Sidebar
+│   │       └── mobile-nav.tsx  # Mobile navigation
 │   │
-│   ├── hooks/                  # 自定义 React Hooks
-│   │   ├── use-mail.ts         # 邮件操作 hook
-│   │   ├── useEmails.ts        # 邮件数据 hook（调用 /api/emails）
-│   │   ├── use-ai.ts           # AI 功能 hook
-│   │   └── use-pwa.ts          # PWA 相关 hook
+│   ├── hooks/                  # Custom React Hooks
+│   │   ├── use-mail.ts         # Mail operation hook
+│   │   ├── useEmails.ts        # Mail data hook (calls /api/emails)
+│   │   ├── use-ai.ts           # AI feature hook
+│   │   └── use-pwa.ts          # PWA-related hook
 │   │
-│   ├── lib/                    # 工具函数与业务逻辑
-│   │   ├── api/                # 前端 API 封装
-│   │   │   ├── mail.ts         # 邮件 API
+│   ├── lib/                    # Utilities and business logic
+│   │   ├── api/                # Frontend API wrapper
+│   │   │   ├── mail.ts         # Mail API
 │   │   │   ├── ai.ts           # AI API
-│   │   │   ├── types.ts        # 统一数据模型（UnifiedEmail）
-│   │   │   ├── gmail.ts        # Gmail 协议适配器
-│   │   │   ├── outlook.ts      # Outlook 协议适配器
-│   │   │   └── imap.ts         # IMAP 协议适配器
-│   │   ├── ai/                 # AI 核心逻辑
-│   │   │   ├── agent.ts        # AI Agent（摘要 + 回复）
-│   │   │   ├── summarize.ts    # 摘要服务（向后兼容）
-│   │   │   └── smart-reply.ts  # 智能回复（向后兼容）
+│   │   │   ├── types.ts        # Unified data model (UnifiedEmail)
+│   │   │   ├── gmail.ts        # Gmail protocol adapter
+│   │   │   ├── outlook.ts      # Outlook protocol adapter
+│   │   │   └── imap.ts         # IMAP protocol adapter
+│   │   ├── ai/                 # AI core logic
+│   │   │   ├── agent.ts        # AI Agent (summary + reply)
+│   │   │   ├── summarize.ts    # Summary service (backward compatible)
+│   │   │   └── smart-reply.ts  # Smart reply (backward compatible)
 │   │   ├── store/              # Zustand stores
-│   │   │   ├── mail-store.ts   # 邮件状态
-│   │   │   └── ui-store.ts     # UI 状态
-│   │   ├── utils.ts            # 工具函数（cn、formatDate 等）
-│   │   ├── constants.ts        # 全局常量
-│   │   └── adapters/           # 协议适配器
+│   │   │   ├── mail-store.ts   # Mail state
+│   │   │   └── ui-store.ts     # UI state
+│   │   ├── utils.ts            # Utility functions (cn, formatDate, etc.)
+│   │   ├── constants.ts        # Global constants
+│   │   └── adapters/           # Protocol adapters
 │   │       ├── gmail.ts
 │   │       ├── graph.ts
 │   │       └── imap.ts
 │   │
-│   ├── types/                  # TypeScript 类型
-│   │   ├── mail.ts             # 邮件相关类型
-│   │   ├── ai.ts               # AI 相关类型
-│   │   └── index.ts            # 统一导出
+│   ├── types/                  # TypeScript types
+│   │   ├── mail.ts             # Mail-related types
+│   │   ├── ai.ts               # AI-related types
+│   │   └── index.ts            # Unified exports
 │   │
 │   └── styles/
 │       └── globals.css
 │
-├── public/                     # 静态资源
+├── public/                     # Static assets
 │   ├── manifest.json           # PWA Web App Manifest
-│   └── icons/                  # PWA 图标
-│       └── icon.svg            # SVG 占位图标
+│   └── icons/                  # PWA icons
+│       └── icon.svg            # SVG placeholder icon
 │
-├── ARCHITECTURE.md             # 架构设计文档
-├── CLAUDE.md                   # 项目指令与开发规范
-├── DELIVERY.md                 # 交付清单（本项目完成的所有模块）
-├── .env.example                # 环境变量模板
+├── ARCHITECTURE.md             # Architecture design document
+├── CLAUDE.md                   # Project instructions and development guidelines
+├── DELIVERY.md                 # Delivery checklist (all modules completed in this project)
+├── .env.example                # Environment variable template
 ├── package.json
 ├── tailwind.config.ts
 └── tsconfig.json
@@ -126,43 +126,43 @@ ai-email-client/
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 1. 环境要求
+### 1. Prerequisites
 
 - Node.js >= 18.0
-- pnpm >= 8.0（或 npm / yarn）
+- pnpm >= 8.0 (or npm / yarn)
 
-### 2. 安装依赖
+### 2. Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-### 3. 配置环境变量
+### 3. Configure Environment Variables
 
-复制环境变量模板：
+Copy the environment variable template:
 
 ```bash
 cp .env.example .env.local
 ```
 
-编辑 `.env.local`，填入你的 AI API Key：
+Edit `.env.local` and fill in your AI API Key:
 
 ```env
 NEXT_PUBLIC_AI_PROVIDER=siliconflow
 NEXT_PUBLIC_AI_API_KEY=sk-your-api-key-here
 ```
 
-### 4. 启动开发服务器
+### 4. Start the Development Server
 
 ```bash
 pnpm dev
 ```
 
-打开浏览器访问 [http://localhost:3000](http://localhost:3000)
+Open your browser and navigate to [http://localhost:3000](http://localhost:3000)
 
-### 5. 构建生产版本
+### 5. Build for Production
 
 ```bash
 pnpm build
@@ -171,55 +171,55 @@ pnpm start
 
 ---
 
-## 环境变量说明
+## Environment Variables
 
-| 变量 | 必填 | 默认值 | 说明 |
-|------|------|--------|------|
-| `NEXT_PUBLIC_AI_PROVIDER` | 否 | `siliconflow` | AI 提供商：`siliconflow` / `deepseek` / `openai-compatible` |
-| `NEXT_PUBLIC_AI_API_KEY` | 是 | - | AI API Key（从硅基流动或 DeepSeek 获取） |
-| `NEXT_PUBLIC_AI_BASE_URL` | 否 | 根据 provider 自动填充 | 自定义 API 基础 URL |
-| `NEXT_PUBLIC_AI_MODEL` | 否 | `deepseek-ai/DeepSeek-V3` | 使用的模型名称 |
-
----
-
-## 开发指南
-
-### 代码规范
-
-- TypeScript 严格模式，禁止 `any`
-- 所有组件使用函数式 + Hooks
-- API 请求统一封装在 `src/lib/api/`
-- 关键业务逻辑添加中文注释
-
-### 提交规范
-
-```
-feat: 新功能
-fix: 修复 bug
-refactor: 重构（不改变功能行为）
-style: 代码格式调整
-docs: 文档更新
-test: 测试相关
-chore: 构建、依赖更新等杂项
-```
-
-### 添加新的协议适配器
-
-1. 在 `src/lib/adapters/` 下创建新的适配器文件
-2. 实现 `convertToUnified(rawData, accountId): UnifiedEmail` 函数
-3. 在 `src/app/api/emails/route.ts` 中添加协议路由
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `NEXT_PUBLIC_AI_PROVIDER` | No | `siliconflow` | AI provider: `siliconflow` / `deepseek` / `openai-compatible` |
+| `NEXT_PUBLIC_AI_API_KEY` | Yes | - | AI API Key (obtained from SiliconFlow or DeepSeek) |
+| `NEXT_PUBLIC_AI_BASE_URL` | No | Auto-filled based on provider | Custom API base URL |
+| `NEXT_PUBLIC_AI_MODEL` | No | `deepseek-ai/DeepSeek-V3` | Model name to use |
 
 ---
 
-## 部署
+## Development Guide
 
-### Vercel（推荐）
+### Code Standards
+
+- TypeScript strict mode, no `any`
+- All components use functional style + Hooks
+- API requests are uniformly encapsulated in `src/lib/api/`
+- Key business logic should include comments
+
+### Commit Conventions
+
+```
+feat: new feature
+fix: bug fix
+refactor: refactoring (no change in behavior)
+style: code formatting adjustments
+docs: documentation updates
+test: testing related
+chore: build, dependency updates, and other miscellaneous tasks
+```
+
+### Adding a New Protocol Adapter
+
+1. Create a new adapter file under `src/lib/adapters/`
+2. Implement the `convertToUnified(rawData, accountId): UnifiedEmail` function
+3. Add the protocol route in `src/app/api/emails/route.ts`
+
+---
+
+## Deployment
+
+### Vercel (Recommended)
 
 ```bash
 vercel deploy
 ```
 
-Next.js 原生支持，零配置部署。
+Native Next.js support, zero-configuration deployment.
 
 ### Docker
 
