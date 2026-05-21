@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "AI Email Client",
-  description: "AI-first 通用邮件客户端 PWA",
+  description: "AI-first universal email client PWA",
   manifest: "/manifest.json",
   themeColor: "#000000",
   appleWebApp: {
@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <body className={inter.className}>{children}</body>
     </html>
   );

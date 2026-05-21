@@ -33,7 +33,7 @@ export async function refreshGmailToken(refreshToken: string): Promise<TokenResp
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Gmail token 刷新失败: ${response.status} - ${errorText}`);
+    throw new Error(`Gmail token refresh failed: ${response.status} - ${errorText}`);
   }
 
   const data: { access_token: string; refresh_token?: string; expires_in: number } =
@@ -65,7 +65,7 @@ export async function refreshOutlookToken(refreshToken: string): Promise<TokenRe
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Outlook token 刷新失败: ${response.status} - ${errorText}`);
+    throw new Error(`Outlook token refresh failed: ${response.status} - ${errorText}`);
   }
 
   const data: { access_token: string; refresh_token?: string; expires_in: number } =

@@ -12,12 +12,12 @@ export function formatDate(date: Date): string {
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
 
-  if (minutes < 1) return "刚刚";
-  if (minutes < 60) return `${minutes} 分钟前`;
-  if (hours < 24) return `${hours} 小时前`;
-  if (hours < 48) return "昨天";
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (hours < 48) return "Yesterday";
 
-  return date.toLocaleDateString("zh-CN", {
+  return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,

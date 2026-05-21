@@ -1,4 +1,4 @@
-// AI 摘要展示组件
+// AI summary display component
 
 interface AISummaryProps {
   summary: string;
@@ -9,7 +9,7 @@ export function AISummary({ summary, keyPoints }: AISummaryProps) {
   return (
     <div className="rounded-lg border bg-muted/50 p-4">
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-sm font-medium">AI 摘要</span>
+        <span className="text-sm font-medium">AI Summary</span>
       </div>
       <p className="text-sm text-muted-foreground">{summary}</p>
       {keyPoints && keyPoints.length > 0 && (

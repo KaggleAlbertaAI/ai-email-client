@@ -16,7 +16,7 @@ export async function generateSummary(email: UnifiedEmail): Promise<AISummary> {
   const data = await response.json();
   // 如果是错误响应，返回降级数据
   if (!response.ok && data.summary) return data as AISummary;
-  if (!response.ok) throw new Error(`生成摘要失败: ${response.statusText}`);
+  if (!response.ok) throw new Error(`Failed to generate summary: ${response.statusText}`);
   return data as AISummary;
 }
 
@@ -32,7 +32,7 @@ export async function generateSmartReplies(
   });
   const data = await response.json();
   if (!response.ok && data.length) return data as SmartReply[];
-  if (!response.ok) throw new Error(`生成智能回复失败: ${response.statusText}`);
+  if (!response.ok) throw new Error(`Failed to generate smart replies: ${response.statusText}`);
   return data as SmartReply[];
 }
 
@@ -45,6 +45,6 @@ export async function classifyMail(email: UnifiedEmail): Promise<MailClassificat
   });
   const data = await response.json();
   if (!response.ok && data.category) return data as MailClassification;
-  if (!response.ok) throw new Error(`邮件分类失败: ${response.statusText}`);
+  if (!response.ok) throw new Error(`Failed to classify email: ${response.statusText}`);
   return data as MailClassification;
 }

@@ -65,9 +65,9 @@ export function useAI(): UseAIReturn {
     } catch {
       // 回复失败时设置降级回复
       setReplies([
-        { content: "感谢您的邮件，我会尽快处理。", tone: "professional" },
-        { content: "谢谢你的来信，我会尽快回复！", tone: "friendly" },
-        { content: "收到，谢谢。", tone: "concise" },
+        { content: "Thank you for your email. I will handle it as soon as possible.", tone: "professional" },
+        { content: "Thank you for your message. I'll reply soon!", tone: "friendly" },
+        { content: "Received, thank you.", tone: "concise" },
       ]);
     } finally {
       setIsLoading(false);

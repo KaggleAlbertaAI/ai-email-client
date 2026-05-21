@@ -25,11 +25,11 @@ export default function OfflinePage() {
         <path d="M18 12h4" />
       </svg>
 
-      <h1 className="mb-2 text-2xl font-bold">网络连接已断开</h1>
+      <h1 className="mb-2 text-2xl font-bold">No Internet Connection</h1>
       <p className="mb-6 text-muted-foreground">
-        你当前处于离线状态，无法加载新内容。
+        You are currently offline and cannot load new content.
         <br />
-        请检查网络连接后重试。
+        Please check your network connection and try again.
       </p>
 
       <div className="flex gap-3">
@@ -37,21 +37,21 @@ export default function OfflinePage() {
           onClick={handleReload}
           className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
         >
-          重新加载
+          Reload
         </button>
         <button
           onClick={() => window.history.back()}
           className="rounded-lg border border-border bg-background px-6 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
         >
-          返回上一页
+          Go Back
         </button>
       </div>
 
-      {/* 提示已缓存的内容仍然可用 */}
+      {/* Hint that cached content is still available */}
       <div className="mt-12 max-w-sm rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-        <p className="font-medium text-foreground">离线提示</p>
+        <p className="font-medium text-foreground">Offline Notice</p>
         <p className="mt-1">
-          之前加载过的邮件仍然可以在缓存中查看。返回收件箱即可访问已缓存的邮件。
+          Previously loaded emails are still available in the cache. Return to the inbox to access cached emails.
         </p>
       </div>
     </div>

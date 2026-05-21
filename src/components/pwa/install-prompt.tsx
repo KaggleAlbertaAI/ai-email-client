@@ -9,12 +9,12 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 /**
- * PWA 安装引导组件
+ * PWA install prompt component
  *
- * 仅在以下条件同时显示：
- * 1. 浏览器支持 beforeinstallprompt 事件
- * 2. 用户尚未安装 PWA
- * 3. 用户未主动关闭安装提示
+ * Only shows when all of the following conditions are met:
+ * 1. Browser supports the beforeinstallprompt event
+ * 2. PWA is not already installed
+ * 3. User has not dismissed the install prompt
  */
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -22,19 +22,19 @@ export function PWAInstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // 检测是否已安装
+    // Check if already installed
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
       return;
     }
 
-    // 监听安装完成事件
+    // Listen for app installed event
     window.addEventListener("appinstalled", () => {
       setIsInstalled(true);
       setShowPrompt(false);
     });
 
-    // 捕获 beforeinstallprompt 事件
+    // Capture beforeinstallprompt event
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -42,7 +42,7 @@ export function PWAInstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    // 7 秒后自动显示提示（给浏览器时间判断是否可安装）
+    // Auto-show prompt after 7 seconds (give browser time to determine if installable)
     const timer = setTimeout(() => {
       if (deferredPrompt && !isInstalled) {
         setShowPrompt(true);
@@ -69,11 +69,11 @@ export function PWAInstallPrompt() {
 
   const handleDismiss = useCallback(() => {
     setShowPrompt(false);
-    // 30 天内不再显示
+    // Dismiss for 30 days
     localStorage.setItem("pwa-install-dismissed", String(Date.now()));
   }, []);
 
-  // 已安装或浏览器不支持 PWA 则不显示
+  // Don't show if already installed or browser doesn't support PWA
   if (isInstalled || !showPrompt) {
     return null;
   }
@@ -85,7 +85,7 @@ export function PWAInstallPrompt() {
         showPrompt ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
       )}
       role="dialog"
-      aria-label="安装应用"
+      aria-label="Install App"
     >
       <div className="rounded-2xl border bg-card p-5 shadow-xl">
         <div className="flex items-start gap-3">
@@ -96,15 +96,15 @@ export function PWAInstallPrompt() {
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold">安装到主屏幕</h3>
+            <h3 className="text-sm font-semibold">Install to Home Screen</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              将 AI Mail 添加到主屏幕，随时快速访问。支持离线阅读已缓存邮件。
+              Add AI Mail to your home screen for quick access anytime. Supports offline reading of cached emails.
             </p>
           </div>
           <button
             onClick={handleDismiss}
             className="rounded-md p-1 transition-colors hover:bg-muted"
-            aria-label="关闭"
+            aria-label="Close"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -118,13 +118,13 @@ export function PWAInstallPrompt() {
             onClick={handleInstall}
             className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
-            安装
+            Install
           </button>
           <button
             onClick={handleDismiss}
             className="flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
           >
-            暂不
+            Not Now
           </button>
         </div>
       </div>

@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 const MOCK_ACCOUNTS: UnifiedAccount[] = [
   {
     id: "acc-gmail-1",
-    name: "Google 账户",
+    name: "Google Account",
     email: "user@gmail.com",
     protocol: "gmail",
     isConnected: true,
@@ -29,7 +29,7 @@ const MOCK_ACCOUNTS: UnifiedAccount[] = [
   },
   {
     id: "acc-outlook-1",
-    name: "工作账户",
+    name: "Work Account",
     email: "user@company.com",
     protocol: "graph",
     isConnected: true,
@@ -38,7 +38,7 @@ const MOCK_ACCOUNTS: UnifiedAccount[] = [
   },
   {
     id: "acc-imap-1",
-    name: "个人 IMAP",
+    name: "Personal IMAP",
     email: "user@custom-mail.com",
     protocol: "imap",
     isConnected: true,
@@ -52,11 +52,11 @@ const MOCK_ACCOUNTS: UnifiedAccount[] = [
 // ---------------------------------------------------------------------------
 
 const FOLDERS = [
-  { id: "inbox", name: "收件箱", icon: "inbox" },
-  { id: "sent", name: "已发送", icon: "send" },
-  { id: "draft", name: "草稿箱", icon: "draft" },
-  { id: "starred", name: "星标邮件", icon: "star" },
-  { id: "archived", name: "归档", icon: "archive" },
+  { id: "inbox", name: "Inbox", icon: "inbox" },
+  { id: "sent", name: "Sent", icon: "send" },
+  { id: "draft", name: "Drafts", icon: "draft" },
+  { id: "starred", name: "Starred", icon: "star" },
+  { id: "archived", name: "Archive", icon: "archive" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -268,9 +268,9 @@ export default function Home() {
 
   // 当前账户名称
   const currentAccountName = useMemo(() => {
-    if (selectedAccountId === "all") return "所有账户";
+    if (selectedAccountId === "all") return "All Accounts";
     const account = MOCK_ACCOUNTS.find((a) => a.id === selectedAccountId);
-    return account?.name ?? "未知账户";
+    return account?.name ?? "Unknown Account";
   }, [selectedAccountId]);
 
   // 组件挂载时加载邮件
@@ -383,7 +383,7 @@ export default function Home() {
                       <path d="M16 3.13a4 4 0 010 7.75" />
                     </svg>
                   </div>
-                  <span>所有账户</span>
+                  <span>All Accounts</span>
                 </button>
                 {MOCK_ACCOUNTS.map((account) => (
                   <button
@@ -453,7 +453,7 @@ export default function Home() {
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
             </svg>
-            <span className="flex-1 truncate lg:inline hidden">设置</span>
+            <span className="flex-1 truncate lg:inline hidden">Settings</span>
           </button>
         </div>
       </aside>
@@ -487,7 +487,7 @@ export default function Home() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="搜索邮件..."
+              placeholder="Search emails..."
               className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
               autoFocus
             />
@@ -525,17 +525,17 @@ export default function Home() {
               </button>
             </div>
             <h1 className="text-base font-semibold">
-              {activeFolder === "sent" ? "已发送" : activeFolder === "starred" ? "星标邮件" : activeFolder === "archived" ? "归档" : activeFolder === "draft" ? "草稿箱" : "收件箱"}
+              {activeFolder === "sent" ? "Sent" : activeFolder === "starred" ? "Starred" : activeFolder === "archived" ? "Archive" : activeFolder === "draft" ? "Drafts" : "Inbox"}
             </h1>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => openCompose("new")}
                 className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
-                撰写
+                Compose
               </button>
               <span className="text-xs text-muted-foreground">
-                {activeFolder === "sent" ? sentEmails.length : emails.length} 封邮件
+                {activeFolder === "sent" ? sentEmails.length : emails.length} emails
               </span>
             </div>
           </div>
@@ -560,7 +560,7 @@ export default function Home() {
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>
-                <p className="text-sm text-muted-foreground">没有已发送邮件</p>
+                <p className="text-sm text-muted-foreground">No sent emails</p>
               </div>
             ) : (
               <div className="divide-y">
@@ -590,7 +590,7 @@ export default function Home() {
                             "shrink-0 transition-colors hover:text-amber-500",
                             email.flags.isStarred ? "text-amber-500" : "text-muted-foreground/40"
                           )}
-                          title={email.flags.isStarred ? "取消星标" : "添加星标"}
+                          title={email.flags.isStarred ? "Remove star" : "Add star"}
                         >
                           <svg className="h-4 w-4" viewBox="0 0 24 24" fill={email.flags.isStarred ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -632,13 +632,13 @@ export default function Home() {
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <p className="mb-2 text-sm text-muted-foreground">加载失败</p>
+              <p className="mb-2 text-sm text-muted-foreground">Failed to load</p>
               <p className="max-w-xs text-xs text-red-400">{error}</p>
               <button
                 onClick={() => loadInbox()}
                 className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
               >
-                重试
+                Retry
               </button>
             </div>
           ) : emails.length === 0 ? (
@@ -648,7 +648,7 @@ export default function Home() {
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="M22 4L12 13 2 4" />
               </svg>
-              <p className="text-sm text-muted-foreground">没有邮件</p>
+              <p className="text-sm text-muted-foreground">No emails</p>
             </div>
           ) : (
             /* 收件箱 — 邮件列表 */
@@ -680,14 +680,14 @@ export default function Home() {
                           "shrink-0 transition-colors hover:text-amber-500",
                           email.flags.isStarred ? "text-amber-500" : "text-muted-foreground/40"
                         )}
-                        title={email.flags.isStarred ? "取消星标" : "添加星标"}
+                        title={email.flags.isStarred ? "Remove star" : "Add star"}
                       >
                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill={email.flags.isStarred ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
                       </button>
                       {email.ai?.requiresResponse && (
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" title="需要回复" />
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" title="Needs reply" />
                       )}
                       {!email.flags.isRead && !email.ai?.requiresResponse && (
                         <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
@@ -711,7 +711,7 @@ export default function Home() {
                   <p className="mt-1 truncate text-sm">{email.subject}</p>
                   {email.ai?.summary && (
                     <p className="mt-1 truncate text-xs text-muted-foreground/80">
-                      <span className="text-primary/70">AI：</span>
+                      <span className="text-primary/70">AI: </span>
                       {email.ai.summary}
                     </p>
                   )}
@@ -747,7 +747,7 @@ export default function Home() {
               <button
                 onClick={handleArchive}
                 className="rounded-md p-2 transition-colors hover:bg-muted"
-                title="归档邮件"
+                title="Archive email"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 8v13H3V8" />
@@ -761,7 +761,7 @@ export default function Home() {
                   "rounded-md p-2 transition-colors hover:bg-muted",
                   selectedEmail.flags.isStarred ? "text-amber-500" : "text-muted-foreground"
                 )}
-                title={selectedEmail.flags.isStarred ? "取消星标" : "添加星标"}
+                title={selectedEmail.flags.isStarred ? "Remove star" : "Add star"}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill={selectedEmail.flags.isStarred ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -770,7 +770,7 @@ export default function Home() {
               <button
                 onClick={handleDelete}
                 className="rounded-md p-2 text-red-500 transition-colors hover:bg-red-50"
-                title="删除邮件"
+                title="Delete email"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="3 6 5 6 21 6" />
@@ -811,14 +811,14 @@ export default function Home() {
                 ))}
                 <button
                   onClick={() => {
-                    const label = prompt("输入标签名称：");
+                    const label = prompt("Enter label name:");
                     if (label?.trim()) {
                       handleAddLabel(label.trim());
                     }
                   }}
                   className="inline-flex items-center rounded-full border border-dashed border-border px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
                 >
-                  + 标签
+                  + Label
                 </button>
               </div>
 
@@ -832,7 +832,7 @@ export default function Home() {
                     <polyline points="9 17 4 12 9 7" />
                     <path d="M20 18v-2a4 4 0 00-4-4H4" />
                   </svg>
-                  回复
+                  Reply
                 </button>
                 <button
                   onClick={() => handleReply("replyAll")}
@@ -843,7 +843,7 @@ export default function Home() {
                     <polyline points="17 17 12 12 17 7" />
                     <path d="M22 18v-2a4 4 0 00-4-4H4" />
                   </svg>
-                  全部回复
+                  Reply All
                 </button>
                 <button
                   onClick={() => handleReply("forward")}
@@ -853,7 +853,7 @@ export default function Home() {
                     <polyline points="15 17 20 12 15 7" />
                     <path d="M4 18v-2a4 4 0 014-4h12" />
                   </svg>
-                  转发
+                  Forward
                 </button>
               </div>
 
@@ -865,7 +865,7 @@ export default function Home() {
                       <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M12 2a10 10 0 0110 10" />
                       </svg>
-                      AI 正在分析邮件...
+                      AI is analyzing email...
                     </div>
                   </div>
                 ) : summary ? (
@@ -878,7 +878,7 @@ export default function Home() {
                             <path d="M2 17l10 5 10-5" />
                             <path d="M2 12l10 5 10-5" />
                           </svg>
-                          AI 摘要
+                          AI Summary
                         </div>
                         {/* 优先级标签 */}
                         {classification && (
@@ -894,10 +894,10 @@ export default function Home() {
                                     : "bg-gray-100 text-gray-600"
                             )}
                           >
-                            {classification.category === "important" && "重要"}
-                            {classification.category === "normal" && "普通"}
-                            {classification.category === "promotional" && "推广"}
-                            {classification.category === "social" && "社交"}
+                            {classification.category === "important" && "Important"}
+                            {classification.category === "normal" && "Normal"}
+                            {classification.category === "promotional" && "Promotional"}
+                            {classification.category === "social" && "Social"}
                           </span>
                         )}
                       </div>
@@ -918,7 +918,7 @@ export default function Home() {
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                           </svg>
-                          AI 判断需要回复
+                          AI suggests a reply is needed
                         </div>
                       )}
                     </div>
@@ -931,7 +931,7 @@ export default function Home() {
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                       </svg>
-                      {replies.length > 0 ? "换一批智能回复" : "生成智能回复建议"}
+                      {replies.length > 0 ? "Refresh smart replies" : "Generate smart reply suggestions"}
                     </button>
 
                     {replies.length > 0 && (
@@ -956,7 +956,7 @@ export default function Home() {
               {selectedEmail.attachments.length > 0 && (
                 <div className="mt-6">
                   <p className="mb-2 text-xs font-medium text-muted-foreground">
-                    附件（{selectedEmail.attachments.length}）
+                    Attachments ({selectedEmail.attachments.length})
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedEmail.attachments.map((att) => (
@@ -988,7 +988,7 @@ export default function Home() {
               <rect x="2" y="4" width="20" height="16" rx="2" />
               <path d="M22 4L12 13 2 4" />
             </svg>
-            <p className="text-sm text-muted-foreground">选择一封邮件开始阅读</p>
+            <p className="text-sm text-muted-foreground">Select an email to start reading</p>
           </div>
         )}
       </div>
@@ -1000,7 +1000,7 @@ export default function Home() {
             <path d="M18.36 19.61A9 9 0 105.64 5.64" />
             <circle cx="12" cy="12" r="2" />
           </svg>
-          离线模式 — 仅可查看已缓存的邮件
+          Offline mode — only cached emails are available
         </div>
       )}
 

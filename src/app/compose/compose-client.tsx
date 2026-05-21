@@ -14,7 +14,7 @@ export default function ComposeClient() {
   }, []);
 
   if (!mounted) {
-    return <div className="flex h-screen items-center justify-center bg-background text-sm text-muted-foreground">加载中...</div>;
+    return <div className="flex h-screen items-center justify-center bg-background text-sm text-muted-foreground">Loading...</div>;
   }
 
   const mode = (params?.get("mode") as ComposeMode) ?? "new";
@@ -34,7 +34,7 @@ export default function ComposeClient() {
     mode !== "new"
       ? {
           sender: { name: to, email: to },
-          recipients: [{ name: "我", email: "user@gmail.com", type: "to" as const }],
+          recipients: [{ name: "Me", email: "user@gmail.com", type: "to" as const }],
           subject,
           body: { plain: body },
         }

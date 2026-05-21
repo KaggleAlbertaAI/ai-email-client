@@ -95,7 +95,7 @@ export function ComposeForm({
   /** 发送邮件 */
   const handleSend = useCallback(async () => {
     if (!to.trim()) {
-      setError("请填写收件人");
+      setError("Please fill in the recipient");
       return;
     }
 
@@ -121,12 +121,12 @@ export function ComposeForm({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.message ?? "发送失败");
+        throw new Error(data.message ?? "Failed to send");
       }
 
       onSent?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "发送失败，请重试");
+      setError(err instanceof Error ? err.message : "Failed to send, please try again");
     } finally {
       setIsSending(false);
     }
@@ -149,7 +149,7 @@ export function ComposeForm({
             <button
               onClick={onClose}
               className="rounded-md p-2 transition-colors hover:bg-muted"
-              aria-label="关闭"
+              aria-label="Close"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -158,7 +158,7 @@ export function ComposeForm({
             </button>
           )}
           <span className="text-sm font-semibold">
-            {mode === "new" ? "撰写邮件" : mode === "forward" ? "转发邮件" : "回复邮件"}
+            {mode === "new" ? "Compose" : mode === "forward" ? "Forward" : "Reply"}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ export function ComposeForm({
             onClick={handleSaveDraft}
             className="rounded-lg border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
           >
-            存草稿
+            Save Draft
           </button>
           <button
             onClick={handleSend}
@@ -184,7 +184,7 @@ export function ComposeForm({
                   <path d="M4.93 4.93l2.83 2.83" />
                   <path d="M16.24 16.24l2.83 2.83" />
                 </svg>
-                发送中...
+                Sending...
               </>
             ) : (
               <>
@@ -192,7 +192,7 @@ export function ComposeForm({
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>
-                发送
+                Send
               </>
             )}
           </button>
@@ -209,12 +209,12 @@ export function ComposeForm({
 
         {/* 收件人 */}
         <div className="flex items-center border-b py-3">
-          <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">收件人</label>
+          <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">To</label>
           <input
             type="text"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            placeholder="输入收件人邮箱地址"
+            placeholder="Enter recipient email address"
             className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
           />
         </div>
@@ -223,22 +223,22 @@ export function ComposeForm({
         {showCc && (
           <>
             <div className="flex items-center border-b py-3">
-              <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">抄送</label>
+              <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">CC</label>
               <input
                 type="text"
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
-                placeholder="输入抄送人邮箱地址"
+                placeholder="Enter CC email address"
                 className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
               />
             </div>
             <div className="flex items-center border-b py-3">
-              <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">密送</label>
+              <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">BCC</label>
               <input
                 type="text"
                 value={bcc}
                 onChange={(e) => setBcc(e.target.value)}
-                placeholder="输入密送人邮箱地址"
+                placeholder="Enter BCC email address"
                 className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
               />
             </div>
@@ -251,18 +251,18 @@ export function ComposeForm({
             onClick={() => setShowCc(true)}
             className="mb-2 mt-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            添加抄送 / 密送
+            Add CC / BCC
           </button>
         )}
 
         {/* 主题 */}
         <div className="flex items-center border-b py-3">
-          <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">主题</label>
+          <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">Subject</label>
           <input
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            placeholder="邮件主题"
+            placeholder="Email subject"
             className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
           />
         </div>
@@ -271,7 +271,7 @@ export function ComposeForm({
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="撰写邮件正文..."
+          placeholder="Write your message..."
           rows={12}
           className="mt-4 min-h-[200px] w-full resize-none border-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-muted-foreground/50 focus:ring-0"
         />
@@ -279,12 +279,12 @@ export function ComposeForm({
 
       {/* 底部工具栏 */}
       <div className="flex shrink-0 items-center gap-2 border-t px-4 py-2 text-muted-foreground">
-        <button className="rounded p-1.5 transition-colors hover:bg-muted" title="附件">
+        <button className="rounded p-1.5 transition-colors hover:bg-muted" title="Attachment">
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
           </svg>
         </button>
-        <span className="text-xs">{body.length} 字</span>
+        <span className="text-xs">{body.length} characters</span>
       </div>
     </div>
   );
@@ -293,7 +293,7 @@ export function ComposeForm({
 /** 引用原文（回复时使用） */
 function quoteEmail(text: string): string {
   const lines = text.split("\n").map((line) => `> ${line}`).join("\n");
-  return `\n\n--- 原始邮件 ---\n${lines}\n`;
+  return `\n\n--- Original Message ---\n${lines}\n`;
 }
 
 /** 构建转发内容 */
@@ -302,14 +302,14 @@ function buildForwardBody(
 ): string {
   return `
 
----------- 转发邮件 ----------
-发件人：${email.sender.name ?? email.sender.email} <${email.sender.email}>
-收件人：${email.recipients
+---------- Forwarded Message ----------
+From: ${email.sender.name ?? email.sender.email} <${email.sender.email}>
+To: ${email.recipients
     .filter((r) => r.type === "to")
     .map((r) => `${r.name ?? r.email} <${r.email}>`)
     .join(", ")}
-主题：${email.subject}
-日期：${new Date().toLocaleDateString("zh-CN")}
+Subject: ${email.subject}
+Date: ${new Date().toLocaleDateString("en-US")}
 
 ${email.body.plain}
 `;

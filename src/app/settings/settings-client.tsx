@@ -36,13 +36,13 @@ export default function SettingsClient() {
 
     if (connected === "gmail") {
       setGmailStatus({ provider: "gmail", connected: true, email, loading: false });
-      setNotification("Gmail 账户已成功连接" + (email ? ` (${email})` : ""));
+      setNotification("Gmail account connected successfully" + (email ? ` (${email})` : ""));
     } else if (connected === "outlook") {
       setOutlookStatus({ provider: "outlook", connected: true, email, loading: false });
-      setNotification("Outlook 账户已成功连接" + (email ? ` (${email})` : ""));
+      setNotification("Outlook account connected successfully" + (email ? ` (${email})` : ""));
     } else if (error) {
       const detail = params?.get("detail");
-      setNotification(`授权失败: ${error}${detail ? `\n详情: ${decodeURIComponent(detail)}` : ""}`);
+      setNotification(`Authorization failed: ${error}${detail ? `\nDetails: ${decodeURIComponent(detail)}` : ""}`);
     }
   }, [params]);
 
@@ -109,10 +109,10 @@ export default function SettingsClient() {
         } else {
           setOutlookStatus({ provider: "outlook", connected: false, email: null, loading: false });
         }
-        setNotification(`${provider === "gmail" ? "Gmail" : "Outlook"} 已断开连接`);
+        setNotification(`${provider === "gmail" ? "Gmail" : "Outlook"} disconnected`);
       }
     } catch {
-      setNotification("断开连接失败，请重试");
+      setNotification("Failed to disconnect, please try again");
     } finally {
       setDisconnecting(null);
     }
@@ -122,32 +122,32 @@ export default function SettingsClient() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* 头部 */}
+      {/* Header */}
       <header className="flex h-14 shrink-0 items-center border-b px-6">
         <button
           onClick={() => router.push("/")}
           className="mr-4 rounded-md p-2 text-sm transition-colors hover:bg-muted"
-          aria-label="返回首页"
+          aria-label="Back to home"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-lg font-semibold">设置</h1>
+        <h1 className="text-lg font-semibold">Settings</h1>
       </header>
 
-      {/* 通知 */}
+      {/* Notification */}
       {notification && (
         <div className="mx-6 mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
           {notification}
         </div>
       )}
 
-      {/* 内容区域 */}
+      {/* Content */}
       <main className="flex-1 p-6">
         <div className="mx-auto max-w-2xl">
-          <h2 className="mb-6 text-xl font-semibold">邮箱账户</h2>
+          <h2 className="mb-6 text-xl font-semibold">Email Accounts</h2>
 
           <div className="space-y-4">
             {/* Gmail */}
@@ -162,13 +162,13 @@ export default function SettingsClient() {
                   <div>
                     <div className="font-medium">Gmail</div>
                     {gmailStatus.loading ? (
-                      <div className="text-xs text-muted-foreground">检查连接状态...</div>
+                      <div className="text-xs text-muted-foreground">Checking connection...</div>
                     ) : gmailStatus.connected ? (
                       <div className="text-xs text-green-600">
-                        已连接 {gmailStatus.email ? `· ${gmailStatus.email}` : ""}
+                        Connected {gmailStatus.email ? `· ${gmailStatus.email}` : ""}
                       </div>
                     ) : (
-                      <div className="text-xs text-muted-foreground">未连接</div>
+                      <div className="text-xs text-muted-foreground">Not connected</div>
                     )}
                   </div>
                 </div>
@@ -179,14 +179,14 @@ export default function SettingsClient() {
                       disabled={disconnecting === "gmail"}
                       className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                     >
-                      {disconnecting === "gmail" ? "断开中..." : "断开连接"}
+                      {disconnecting === "gmail" ? "Disconnecting..." : "Disconnect"}
                     </button>
                   ) : (
                     <a
                       href={connectUrl("gmail")}
                       className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
                     >
-                      连接 Gmail
+                      Connect Gmail
                     </a>
                   )}
                 </div>
@@ -205,13 +205,13 @@ export default function SettingsClient() {
                   <div>
                     <div className="font-medium">Outlook / Microsoft 365</div>
                     {outlookStatus.loading ? (
-                      <div className="text-xs text-muted-foreground">检查连接状态...</div>
+                      <div className="text-xs text-muted-foreground">Checking connection...</div>
                     ) : outlookStatus.connected ? (
                       <div className="text-xs text-green-600">
-                        已连接 {outlookStatus.email ? `· ${outlookStatus.email}` : ""}
+                        Connected {outlookStatus.email ? `· ${outlookStatus.email}` : ""}
                       </div>
                     ) : (
-                      <div className="text-xs text-muted-foreground">未连接</div>
+                      <div className="text-xs text-muted-foreground">Not connected</div>
                     )}
                   </div>
                 </div>
@@ -222,14 +222,14 @@ export default function SettingsClient() {
                       disabled={disconnecting === "outlook"}
                       className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                     >
-                      {disconnecting === "outlook" ? "断开中..." : "断开连接"}
+                      {disconnecting === "outlook" ? "Disconnecting..." : "Disconnect"}
                     </button>
                   ) : (
                     <a
                       href={connectUrl("outlook")}
                       className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
                     >
-                      连接 Outlook
+                      Connect Outlook
                     </a>
                   )}
                 </div>
@@ -237,11 +237,11 @@ export default function SettingsClient() {
             </div>
           </div>
 
-          {/* 环境变量配置说明 */}
+          {/* Environment Configuration */}
           <div className="mt-8 rounded-lg border bg-muted/30 p-5">
-            <h3 className="mb-3 text-sm font-semibold">环境变量配置</h3>
+            <h3 className="mb-3 text-sm font-semibold">Environment Configuration</h3>
             <p className="mb-3 text-xs text-muted-foreground">
-              要使 OAuth 授权正常工作，需要在 Vercel 或本地环境中配置以下变量：
+              For OAuth authorization to work properly, configure the following environment variables in Vercel or locally:
             </p>
             <pre className="overflow-x-auto rounded bg-muted/50 p-3 text-xs leading-relaxed">
 {`GMAIL_CLIENT_ID=your-google-oauth-client-id

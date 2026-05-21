@@ -1,4 +1,4 @@
-// 智能回复组件
+// Smart reply component
 
 interface SmartReplyProps {
   suggestions: Array<{ content: string; tone: string }>;
@@ -8,7 +8,7 @@ interface SmartReplyProps {
 export function SmartReply({ suggestions, onSelect }: SmartReplyProps) {
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">智能回复</p>
+      <p className="text-xs text-muted-foreground">Smart Reply</p>
       <div className="flex flex-wrap gap-2">
         {suggestions.map((s, i) => (
           <button

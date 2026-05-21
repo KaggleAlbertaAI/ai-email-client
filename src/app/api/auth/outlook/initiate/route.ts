@@ -11,7 +11,7 @@ export async function GET() {
 
   if (!config.clientId) {
     return NextResponse.json(
-      { error: "OUTLOOK_CLIENT_ID 环境变量未配置" },
+      { error: "OUTLOOK_CLIENT_ID environment variable is not configured" },
       { status: 500 }
     );
   }

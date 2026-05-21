@@ -7,7 +7,7 @@ import type { Mail, MailAccount, MailFolder } from "@/types";
 export async function fetchInboxMail(accountId: string, page: number = 1): Promise<Mail[]> {
   const response = await fetch(`/api/mail/inbox?accountId=${accountId}&page=${page}`);
   if (!response.ok) {
-    throw new Error(`获取邮件失败: ${response.statusText}`);
+    throw new Error(`Failed to fetch emails: ${response.statusText}`);
   }
   return response.json();
 }
@@ -16,7 +16,7 @@ export async function fetchInboxMail(accountId: string, page: number = 1): Promi
 export async function fetchMailDetail(mailId: string): Promise<Mail> {
   const response = await fetch(`/api/mail/${mailId}`);
   if (!response.ok) {
-    throw new Error(`获取邮件详情失败: ${response.statusText}`);
+    throw new Error(`Failed to fetch email details: ${response.statusText}`);
   }
   return response.json();
 }
@@ -34,7 +34,7 @@ export async function sendMail(payload: {
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    throw new Error(`发送邮件失败: ${response.statusText}`);
+    throw new Error(`Failed to send email: ${response.statusText}`);
   }
 }
 
@@ -44,7 +44,7 @@ export async function markMailAsRead(mailId: string): Promise<void> {
     method: "PATCH",
   });
   if (!response.ok) {
-    throw new Error(`标记已读失败: ${response.statusText}`);
+    throw new Error(`Failed to mark as read: ${response.statusText}`);
   }
 }
 
@@ -54,7 +54,7 @@ export async function deleteMail(mailId: string): Promise<void> {
     method: "DELETE",
   });
   if (!response.ok) {
-    throw new Error(`删除邮件失败: ${response.statusText}`);
+    throw new Error(`Failed to delete email: ${response.statusText}`);
   }
 }
 
@@ -62,7 +62,7 @@ export async function deleteMail(mailId: string): Promise<void> {
 export async function fetchAccounts(): Promise<MailAccount[]> {
   const response = await fetch("/api/accounts");
   if (!response.ok) {
-    throw new Error(`获取账户列表失败: ${response.statusText}`);
+    throw new Error(`Failed to fetch account list: ${response.statusText}`);
   }
   return response.json();
 }
@@ -71,7 +71,7 @@ export async function fetchAccounts(): Promise<MailAccount[]> {
 export async function fetchFolders(accountId: string): Promise<MailFolder[]> {
   const response = await fetch(`/api/folders?accountId=${accountId}`);
   if (!response.ok) {
-    throw new Error(`获取文件夹列表失败: ${response.statusText}`);
+    throw new Error(`Failed to fetch folder list: ${response.statusText}`);
   }
   return response.json();
 }
@@ -82,7 +82,7 @@ export async function archiveEmail(emailId: string): Promise<void> {
     method: "POST",
   });
   if (!response.ok) {
-    throw new Error(`归档失败: ${response.statusText}`);
+    throw new Error(`Failed to archive email: ${response.statusText}`);
   }
 }
 
@@ -97,6 +97,6 @@ export async function updateEmailLabels(
     body: JSON.stringify(options),
   });
   if (!response.ok) {
-    throw new Error(`标签操作失败: ${response.statusText}`);
+    throw new Error(`Failed to update labels: ${response.statusText}`);
   }
 }

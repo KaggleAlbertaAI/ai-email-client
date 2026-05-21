@@ -1,4 +1,4 @@
-// 侧边栏组件
+// Sidebar component
 
 interface SidebarProps {
   folders: Array<{ name: string; unreadCount: number }>;
@@ -9,7 +9,7 @@ interface SidebarProps {
 export function Sidebar({ folders, activeFolder, onFolderChange }: SidebarProps) {
   return (
     <aside className="hidden w-64 flex-col border-r bg-muted/40 p-4 md:flex">
-      <h2 className="mb-4 text-lg font-semibold">文件夹</h2>
+      <h2 className="mb-4 text-lg font-semibold">Folders</h2>
       <nav className="space-y-1">
         {folders.map((folder) => (
           <button

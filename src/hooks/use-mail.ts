@@ -18,7 +18,7 @@ export function useMail() {
         const data = await mailApi.fetchInboxMail(accountId);
         setMails(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "未知错误");
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
       }

@@ -71,7 +71,7 @@ export function useEmails(): UseEmailsReturn {
 
         const response = await fetch(`/api/emails?${params.toString()}`);
         if (!response.ok) {
-          throw new Error(`获取邮件失败: ${response.statusText}`);
+          throw new Error(`Failed to fetch emails: ${response.statusText}`);
         }
 
         const data: PaginatedResponse<UnifiedEmail> = await response.json();
@@ -80,7 +80,7 @@ export function useEmails(): UseEmailsReturn {
         setNextCursor(data.nextCursor);
         setLastQuery(options ?? {});
       } catch (err) {
-        setError(err instanceof Error ? err.message : "未知错误");
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
       }
@@ -102,7 +102,7 @@ export function useEmails(): UseEmailsReturn {
 
       const response = await fetch(`/api/emails?${params.toString()}`);
       if (!response.ok) {
-        throw new Error(`加载更多邮件失败: ${response.statusText}`);
+        throw new Error(`Failed to load more emails: ${response.statusText}`);
       }
 
       const data: PaginatedResponse<UnifiedEmail> = await response.json();
