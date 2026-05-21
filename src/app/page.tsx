@@ -117,6 +117,10 @@ export default function Home() {
   const [composeMode, setComposeMode] = useState<ComposeMode | null>(null);
   const [composeEmail, setComposeEmail] = useState<UnifiedEmail | null>(null);
 
+  // 已发送邮件列表（本地维护）
+  const [sentEmails, setSentEmails] = useState<UnifiedEmail[]>([]);
+  const [sentLoading, setSentLoading] = useState(false);
+
   // 打开 compose
   const openCompose = useCallback((mode: ComposeMode, email?: UnifiedEmail) => {
     setComposeMode(mode);
@@ -134,7 +138,7 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false);
 
   // 使用 useEmails hook 获取真实数据
-  const { emails, loading, error, selectedEmail, loadInbox, selectEmail, loadMore } = useEmails();
+  const { emails, loading, error, selectedEmail, loadInbox, selectEmail, loadMore, removeEmail, archiveEmailLocal, addLabelToLocalEmail } = useEmails();
 
   // AI 功能 hook
   const { summary, replies, classification, isLoading: aiLoading, summarize, getSmartReplies, classify } = useAI();
@@ -189,46 +193,46 @@ export default function Home() {
     setShowSearch(false);
   }, [searchQuery, loadInbox]);
 
-  // 删除邮件
+  // 删除邮件 — 先更新本地状态，再调 API
   const handleDelete = useCallback(async () => {
     if (!selectedEmail) return;
     try {
+      // 先同步本地 UI 状态，用户立即看到变化
+      removeEmail(selectedEmail.id);
       const response = await fetch(`/api/emails/${selectedEmail.id}`, {
         method: "DELETE",
       });
-      if (response.ok) {
-        selectEmail(null);
-        setMobileView("list");
+      if (!response.ok) {
+        // API 失败，恢复邮件
         loadInbox();
       }
     } catch {
-      // 删除失败时提示
+      // 网络失败，恢复邮件
+      loadInbox();
     }
-  }, [selectedEmail, selectEmail, loadInbox]);
+  }, [selectedEmail, removeEmail, loadInbox]);
 
-  // 归档邮件
+  // 归档邮件 — 先更新本地状态，再调 API
   const handleArchive = useCallback(async () => {
     if (!selectedEmail) return;
     try {
+      archiveEmailLocal(selectedEmail.id);
       await archiveEmail(selectedEmail.id);
-      selectEmail(null);
-      setMobileView("list");
-      loadInbox();
     } catch {
-      // 归档失败时提示
+      loadInbox();
     }
-  }, [selectedEmail, selectEmail, loadInbox]);
+  }, [selectedEmail, archiveEmailLocal, loadInbox]);
 
-  // 快速添加标签
+  // 快速添加标签 — 先本地同步，再调 API
   const handleAddLabel = useCallback(async (label: string) => {
     if (!selectedEmail) return;
     try {
+      addLabelToLocalEmail(selectedEmail.id, label);
       await updateEmailLabels(selectedEmail.id, { add: [label] });
-      loadInbox();
     } catch {
-      // 标签操作失败时提示
+      loadInbox();
     }
-  }, [selectedEmail, loadInbox]);
+  }, [selectedEmail, addLabelToLocalEmail, loadInbox]);
 
   // 当前账户名称
   const currentAccountName = useMemo(() => {
@@ -242,6 +246,28 @@ export default function Home() {
     loadInbox();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 切换文件夹时加载对应数据
+  const handleFolderChange = useCallback(async (folderId: string) => {
+    setActiveFolder(folderId);
+    selectEmail(null);
+    setMobileView("list");
+
+    if (folderId === "sent") {
+      setSentLoading(true);
+      try {
+        const response = await fetch("/api/mail/send");
+        if (response.ok) {
+          const data: UnifiedEmail[] = await response.json();
+          setSentEmails(data);
+        }
+      } catch {
+        // 加载失败不影响其他操作
+      } finally {
+        setSentLoading(false);
+      }
+    }
+  }, [selectEmail]);
 
   // 邮件列表滚动容器 ref —— 用于触底加载更多
   const listRef = useRef<HTMLDivElement>(null);
@@ -362,7 +388,7 @@ export default function Home() {
             return (
               <button
                 key={folder.id}
-                onClick={() => setActiveFolder(folder.id)}
+                onClick={() => handleFolderChange(folder.id)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                   activeFolder === folder.id
@@ -449,7 +475,7 @@ export default function Home() {
                 </svg>
               </button>
             </div>
-            <h1 className="text-base font-semibold">收件箱</h1>
+            <h1 className="text-base font-semibold">{activeFolder === "sent" ? "已发送" : "收件箱"}</h1>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => openCompose("new")}
@@ -457,14 +483,64 @@ export default function Home() {
               >
                 撰写
               </button>
-              <span className="text-xs text-muted-foreground">{emails.length} 封邮件</span>
+              <span className="text-xs text-muted-foreground">
+                {activeFolder === "sent" ? sentEmails.length : emails.length} 封邮件
+              </span>
             </div>
           </div>
         )}
 
         {/* 邮件列表内容 —— 虚拟滚动容器 */}
-        <div ref={listRef} onScroll={handleScroll} className="flex-1 overflow-y-auto" role="list" aria-label="邮件列表">
-          {loading ? (
+        <div ref={listRef} onScroll={activeFolder === "inbox" ? handleScroll : undefined} className="flex-1 overflow-y-auto" role="list" aria-label="邮件列表">
+          {/* 已发送文件夹 */}
+          {activeFolder === "sent" ? (
+            sentLoading ? (
+              <div className="space-y-2 p-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse rounded-lg border p-4">
+                    <div className="h-4 w-24 rounded bg-muted" />
+                    <div className="mt-2 h-3 w-3/4 rounded bg-muted" />
+                  </div>
+                ))}
+              </div>
+            ) : sentEmails.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <svg className="mb-4 h-16 w-16 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+                <p className="text-sm text-muted-foreground">没有已发送邮件</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {sentEmails.map((email) => (
+                  <button
+                    key={email.id}
+                    onClick={() => handleSelectEmail(email)}
+                    className={cn(
+                      "w-full border-b p-4 text-left transition-colors hover:bg-muted",
+                      selectedEmail?.id === email.id && "bg-muted"
+                    )}
+                    role="listitem"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="shrink-0 text-green-500">{ICONS.send}</span>
+                        <span className="truncate text-sm font-medium">
+                          {email.recipients.filter((r) => r.type === "to").map((r) => r.email).join(", ")}
+                        </span>
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatDate(new Date(email.timestamps.sent))}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-sm">{email.subject}</p>
+                  </button>
+                ))}
+              </div>
+            )
+          ) : loading ? (
+            /* 收件箱 — 加载中 */
             <div className="space-y-2 p-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="animate-pulse rounded-lg border p-4">
@@ -478,6 +554,7 @@ export default function Home() {
               ))}
             </div>
           ) : error ? (
+            /* 收件箱 — 加载失败 */
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <svg className="mb-4 h-16 w-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="12" cy="12" r="10" />
@@ -494,6 +571,7 @@ export default function Home() {
               </button>
             </div>
           ) : emails.length === 0 ? (
+            /* 收件箱 — 空 */
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <svg className="mb-4 h-16 w-16 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -502,52 +580,51 @@ export default function Home() {
               <p className="text-sm text-muted-foreground">没有邮件</p>
             </div>
           ) : (
+            /* 收件箱 — 邮件列表 */
             <div className="divide-y">
               {emails.map((email) => (
-                  <button
-                    key={email.id}
-                    onClick={() => handleSelectEmail(email)}
-                    className={cn(
-                      "w-full border-b p-4 text-left transition-colors hover:bg-muted",
-                      selectedEmail?.id === email.id && "bg-muted",
-                      !email.flags.isRead && "bg-primary/5"
-                    )}
-                    role="listitem"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {/* AI 优先级指示点 */}
-                        {email.ai?.requiresResponse && (
-                          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" title="需要回复" />
+                <button
+                  key={email.id}
+                  onClick={() => handleSelectEmail(email)}
+                  className={cn(
+                    "w-full border-b p-4 text-left transition-colors hover:bg-muted",
+                    selectedEmail?.id === email.id && "bg-muted",
+                    !email.flags.isRead && "bg-primary/5"
+                  )}
+                  role="listitem"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {email.ai?.requiresResponse && (
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" title="需要回复" />
+                      )}
+                      {!email.flags.isRead && !email.ai?.requiresResponse && (
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                      )}
+                      {email.flags.isStarred && (
+                        <span className="shrink-0 text-amber-500">{ICONS.star}</span>
+                      )}
+                      <span
+                        className={cn(
+                          "truncate text-sm",
+                          !email.flags.isRead ? "font-semibold" : "font-medium"
                         )}
-                        {!email.flags.isRead && !email.ai?.requiresResponse && (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-                        )}
-                        {email.flags.isStarred && (
-                          <span className="shrink-0 text-amber-500">{ICONS.star}</span>
-                        )}
-                        <span
-                          className={cn(
-                            "truncate text-sm",
-                            !email.flags.isRead ? "font-semibold" : "font-medium"
-                          )}
-                        >
-                          {email.sender.name || email.sender.email}
-                        </span>
-                      </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatDate(new Date(email.timestamps.received))}
+                      >
+                        {email.sender.name || email.sender.email}
                       </span>
                     </div>
-                    <p className="mt-1 truncate text-sm">{email.subject}</p>
-                    {/* AI 摘要预览 */}
-                    {email.ai?.summary && (
-                      <p className="mt-1 truncate text-xs text-muted-foreground/80">
-                        <span className="text-primary/70">AI：</span>
-                        {email.ai.summary}
-                      </p>
-                    )}
-                  </button>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatDate(new Date(email.timestamps.received))}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-sm">{email.subject}</p>
+                  {email.ai?.summary && (
+                    <p className="mt-1 truncate text-xs text-muted-foreground/80">
+                      <span className="text-primary/70">AI：</span>
+                      {email.ai.summary}
+                    </p>
+                  )}
+                </button>
               ))}
             </div>
           )}

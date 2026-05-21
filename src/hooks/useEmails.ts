@@ -29,6 +29,12 @@ export interface UseEmailsReturn {
   selectEmail: (email: UnifiedEmail | null) => void;
   /** 刷新邮件列表 */
   refresh: () => Promise<void>;
+  /** 从本地状态移除邮件（删除后同步 UI） */
+  removeEmail: (id: string) => void;
+  /** 标记邮件为已归档（本地状态，UI 不再显示） */
+  archiveEmailLocal: (id: string) => void;
+  /** 更新邮件标签（本地状态同步） */
+  addLabelToLocalEmail: (id: string, label: string) => void;
 }
 
 export function useEmails(): UseEmailsReturn {
@@ -113,6 +119,30 @@ export function useEmails(): UseEmailsReturn {
     await loadInbox(lastQuery);
   }, [loadInbox, lastQuery]);
 
+  /** 从本地状态移除邮件（删除后同步 UI） */
+  const removeEmail = useCallback((id: string) => {
+    setEmails((prev) => prev.filter((e) => e.id !== id));
+    setSelectedEmail((prev) => (prev?.id === id ? null : prev));
+  }, []);
+
+  /** 标记邮件为已归档（本地状态，UI 不再显示） */
+  const archiveEmailLocal = useCallback((id: string) => {
+    setEmails((prev) => prev.filter((e) => e.id !== id));
+    setSelectedEmail((prev) => (prev?.id === id ? null : prev));
+  }, []);
+
+  /** 更新邮件标签（本地状态同步） */
+  const addLabelToLocalEmail = useCallback((id: string, label: string) => {
+    setEmails((prev) =>
+      prev.map((e) =>
+        e.id === id ? { ...e, labels: [...(e.labels ?? []), label] } : e
+      )
+    );
+    setSelectedEmail((prev) =>
+      prev?.id === id ? { ...prev, labels: [...(prev.labels ?? []), label] } : prev
+    );
+  }, []);
+
   return {
     emails,
     loading,
@@ -124,5 +154,8 @@ export function useEmails(): UseEmailsReturn {
     loadMore,
     selectEmail,
     refresh,
+    removeEmail,
+    archiveEmailLocal,
+    addLabelToLocalEmail,
   };
 }

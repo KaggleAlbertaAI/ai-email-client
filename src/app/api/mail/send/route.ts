@@ -2,7 +2,10 @@
 // 发送邮件 — 根据账户协议类型路由到 Gmail / Outlook / SMTP
 
 import { NextRequest, NextResponse } from "next/server";
-import type { ApiError } from "@/lib/api/types";
+import type { ApiError, UnifiedEmail } from "@/lib/api/types";
+
+// 内存存储已发送邮件（容器生命周期内有效）
+const sentEmails: UnifiedEmail[] = [];
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +31,25 @@ export async function POST(request: NextRequest) {
       return await sendViaOutlook(outlookToken, to, cc, bcc, subject, emailBody);
     }
 
-    // Demo 模式：模拟发送成功
+    // Demo 模式：存储到内存并返回成功
+    const email: UnifiedEmail = {
+      id: `sent-${Date.now()}`,
+      sender: { email: "user@gmail.com", name: "我" },
+      recipients: [
+        ...to.map((addr: string) => ({ email: addr, type: "to" as const })),
+        ...(cc?.map((addr: string) => ({ email: addr, type: "cc" as const })) ?? []),
+        ...(bcc?.map((addr: string) => ({ email: addr, type: "bcc" as const })) ?? []),
+      ],
+      subject,
+      body: { plain: emailBody },
+      timestamps: { sent: new Date().toISOString(), received: new Date().toISOString() },
+      flags: { isRead: true, isStarred: false, isDraft: false, hasAttachments: false },
+      attachments: [],
+      labels: ["已发送"],
+      source: { accountId: "demo", protocol: "gmail", rawId: `sent-${Date.now()}` },
+    };
+    sentEmails.unshift(email);
+
     return NextResponse.json({
       success: true,
       message: "邮件已发送（Demo 模式）",
@@ -43,6 +64,11 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/** GET /api/mail/send — 获取已发送邮件列表 */
+export async function GET() {
+  return NextResponse.json(sentEmails);
 }
 
 /** 通过 Gmail API 发送邮件 */
