@@ -3,12 +3,11 @@
 import { EncryptJWT, jwtDecrypt } from "jose";
 import type { NextRequest, NextResponse } from "next/server";
 
-const COOKIE_ENCRYPTION_KEY = process.env.COOKIE_ENCRYPTION_KEY ?? "dev-fallback-key-do-not-use-in-production";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 天
 
-/** 获取加密密钥 */
+/** 获取加密密钥 — 运行时读取，避免构建时缓存为空 */
 function getSecretKey(): Uint8Array {
-  const key = COOKIE_ENCRYPTION_KEY;
+  const key = process.env.COOKIE_ENCRYPTION_KEY ?? "dev-fallback-key-do-not-use-in-production";
   // 确保密钥长度为 32 字节
   const encoder = new TextEncoder();
   const encoded = encoder.encode(key);
