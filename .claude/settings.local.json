@@ -47,7 +47,8 @@
       "Bash(curl -s \"http://localhost:3000\")",
       "Bash(openssl rand *)",
       "WebFetch(domain:github.com)",
-      "Bash(gh repo *)"
+      "Bash(gh repo *)",
+      "Bash(git checkout *)"
     ]
   }
 }

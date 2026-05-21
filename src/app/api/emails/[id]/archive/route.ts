@@ -16,9 +16,14 @@ export async function POST(
 ) {
   const { id } = params;
 
+  console.log("[archive] Archiving email:", id);
+
   // 尝试从 cookie/header 获取 Gmail token
   const gmailToken = extractToken(request, "gmail");
+  console.log("[archive] Gmail token:", gmailToken ? `present (${gmailToken.length} chars)` : "none");
+
   if (gmailToken) {
+    console.log("[archive] Calling Gmail API to remove INBOX label for:", id);
     const response = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}/modify`,
       {
@@ -30,7 +35,11 @@ export async function POST(
         body: JSON.stringify({ removeLabelIds: ["INBOX"] }),
       }
     );
+    console.log("[archive] Gmail API response:", response.status, response.statusText);
+
     if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      console.error("[archive] Gmail archive failed:", errorText);
       return NextResponse.json(
         { code: "ARCHIVE_FAILED", message: `Gmail 归档失败: ${response.status}` },
         { status: 500 }
@@ -41,6 +50,8 @@ export async function POST(
 
   // Outlook token
   const outlookToken = extractToken(request, "outlook");
+  console.log("[archive] Outlook token:", outlookToken ? `present (${outlookToken.length} chars)` : "none");
+
   if (outlookToken) {
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/me/messages/${id}/move`,
@@ -62,6 +73,7 @@ export async function POST(
     return NextResponse.json({ success: true, protocol: "graph", action: "archived" });
   }
 
+  console.log("[archive] No token found, using demo mode");
   // Demo 模式: 模拟归档成功
   return NextResponse.json({ success: true, protocol: "demo", action: "archived", id });
 }

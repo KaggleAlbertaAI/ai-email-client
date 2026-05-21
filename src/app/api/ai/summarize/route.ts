@@ -28,12 +28,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 检查 AI 环境变量
+    const provider = process.env.AI_PROVIDER ?? process.env.NEXT_PUBLIC_AI_PROVIDER ?? "siliconflow";
+    const apiKey = process.env.AI_API_KEY ?? process.env.NEXT_PUBLIC_AI_API_KEY ?? "";
+    const baseUrl = process.env.AI_BASE_URL ?? process.env.NEXT_PUBLIC_AI_BASE_URL ?? "";
+    const model = process.env.AI_MODEL ?? process.env.NEXT_PUBLIC_AI_MODEL ?? "";
+
+    console.log("[ai/summarize] provider:", provider, "apiKey:", apiKey ? `present (${apiKey.length} chars)` : "EMPTY", "baseUrl:", baseUrl || "(default)", "model:", model || "(default)");
+
     // 动态导入 agent，避免构建时依赖
     const { generateSummary } = await import("@/lib/ai/agent");
     const summary = await generateSummary(email as UnifiedEmail);
+    console.log("[ai/summarize] summary generated:", summary.summary.slice(0, 30) + "...");
     return NextResponse.json(summary);
   } catch (error) {
     // 降级：返回邮件正文的截断版本
+    console.error("[ai/summarize] Error:", error);
     const body = await request.json().catch(() => ({}));
     return NextResponse.json(fallbackSummary(body.email));
   }

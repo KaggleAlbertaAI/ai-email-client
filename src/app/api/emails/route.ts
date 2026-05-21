@@ -198,14 +198,14 @@ async function fetchGmailMessages(token: string, cursor: string | null, limit: n
     maxResults: String(limit),
   });
 
-  // 根据文件夹类型设置不同的 labelIds 查询
+  // 根据文件夹类型设置不同的查询参数
   switch (folder) {
     case "starred":
       params.set("labelIds", "STARRED");
       break;
     case "archived":
-      // 归档 = 不在收件箱中的邮件，使用 -INBOX 排除
-      params.set("labelIds", "-INBOX");
+      // 归档 = 不在收件箱中的邮件，使用 q=-in:inbox 排除
+      params.set("q", "-in:inbox");
       break;
     case "inbox":
     default:
