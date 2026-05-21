@@ -7,6 +7,7 @@ import { convertGmailToUnified } from "@/lib/api/gmail";
 import { convertOutlookToUnified } from "@/lib/api/outlook";
 import { convertImapToUnified } from "@/lib/api/imap";
 import { PAGE_SIZE } from "@/lib/constants";
+import { decryptTokenCookie } from "@/lib/auth/token-resolver";
 
 export const dynamic = "force-dynamic";
 
@@ -98,10 +99,16 @@ function getDemoEmails(): UnifiedEmail[] {
 
 /**
  * 从 middleware 注入的请求头提取 OAuth Token
- * middleware 已从加密 cookie 读取并注入 x-auth-token-gmail / x-auth-token-outlook
+ * 如果 header 为空，则直接解密 cookie（Vercel 下 middleware header 注入不可靠）
  */
-function extractBearerToken(request: NextRequest, provider: "gmail" | "outlook"): string | null {
-  return request.headers.get(provider === "gmail" ? "x-auth-token-gmail" : "x-auth-token-outlook");
+async function extractToken(request: NextRequest, provider: "gmail" | "outlook"): Promise<string | null> {
+  // 先尝试 middleware 注入的 header
+  const headerName = provider === "gmail" ? "x-auth-token-gmail" : "x-auth-token-outlook";
+  const fromHeader = request.headers.get(headerName);
+  if (fromHeader) return fromHeader;
+
+  // 直接从 cookie 解密
+  return await decryptTokenCookie(request, provider);
 }
 
 /**
@@ -371,7 +378,6 @@ function applyFilters(
  * 返回：PaginatedResponse<UnifiedEmail>
  */
 export async function GET(request: NextRequest) {
-  console.log("[emails] === /api/emails route handler invoked ===");
   try {
     const { searchParams } = request.nextUrl;
     const accountId = searchParams.get("accountId");
@@ -439,27 +445,31 @@ async function fetchMessagesForAccount(
 ): Promise<PaginatedResponse<UnifiedEmail>> {
   switch (account.protocol) {
     case "gmail": {
-      const token = extractBearerToken(request, "gmail") ?? getFallbackGmailToken();
-      console.log("[emails] Gmail token from header:", token ? `present (${token.length} chars)` : "none");
-      if (!token) {
+      const token = await extractToken(request, "gmail");
+      const fallback = getFallbackGmailToken();
+      const finalToken = token ?? fallback;
+      console.log("[emails] Gmail token:", finalToken ? `present (${finalToken.length} chars), source=${token ? "cookie" : "env"}` : "none");
+      if (!finalToken) {
         throw new Error(
-          "缺少 Gmail 访问令牌。请在请求头中携带 Authorization: Bearer <token>，或设置环境变量 GMAIL_ACCESS_TOKEN"
+          "缺少 Gmail 访问令牌。请先在设置页面连接 Gmail 账户，或设置环境变量 GMAIL_ACCESS_TOKEN"
         );
       }
-      const { messages, nextCursor } = await fetchGmailMessages(token, cursor, limit);
+      const { messages, nextCursor } = await fetchGmailMessages(finalToken, cursor, limit);
       console.log("[emails] Gmail messages fetched:", messages.length);
       const emails = messages.map((msg) => convertGmailToUnified(msg, account.id));
       return { data: emails, nextCursor, hasMore: !!nextCursor };
     }
 
     case "graph": {
-      const token = extractBearerToken(request, "outlook") ?? getFallbackOutlookToken();
-      if (!token) {
+      const token = await extractToken(request, "outlook");
+      const fallback = getFallbackOutlookToken();
+      const finalToken = token ?? fallback;
+      if (!finalToken) {
         throw new Error(
-          "缺少 Outlook 访问令牌。请在请求头中携带 Authorization: Bearer <token>，或设置环境变量 OUTLOOK_ACCESS_TOKEN"
+          "缺少 Outlook 访问令牌。请先在设置页面连接 Outlook 账户，或设置环境变量 OUTLOOK_ACCESS_TOKEN"
         );
       }
-      const { messages, nextCursor } = await fetchOutlookMessages(token, cursor, limit);
+      const { messages, nextCursor } = await fetchOutlookMessages(finalToken, cursor, limit);
       const emails = messages.map((msg) => convertOutlookToUnified(msg, account.id));
       return { data: emails, nextCursor, hasMore: !!nextCursor };
     }
