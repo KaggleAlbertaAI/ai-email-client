@@ -2,10 +2,14 @@
 // Outlook OAuth 回调 — 用授权码换取 token，写入加密 cookie
 
 import { NextRequest, NextResponse } from "next/server";
-import { OUTLOOK_CONFIG } from "@/lib/auth/oauth-config";
+import { getOutlookConfig } from "@/lib/auth/oauth-config";
 import { setAuthCookie } from "@/lib/auth/cookies";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
+  const config = getOutlookConfig();
+
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -31,14 +35,14 @@ export async function GET(request: NextRequest) {
 
   const params = new URLSearchParams({
     code,
-    client_id: OUTLOOK_CONFIG.clientId,
-    client_secret: OUTLOOK_CONFIG.clientSecret,
-    redirect_uri: OUTLOOK_CONFIG.redirectUri,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    redirect_uri: config.redirectUri,
     grant_type: "authorization_code",
     code_verifier: verifier,
   });
 
-  const tokenResponse = await fetch(OUTLOOK_CONFIG.tokenUrl, {
+  const tokenResponse = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
@@ -60,7 +64,6 @@ export async function GET(request: NextRequest) {
 
   const expiresAt = Math.floor(Date.now() / 1000) + tokenData.expires_in;
 
-  // 获取邮箱地址
   let email: string | null = null;
   try {
     const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {

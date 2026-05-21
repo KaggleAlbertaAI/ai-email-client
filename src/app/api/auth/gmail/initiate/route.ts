@@ -2,27 +2,29 @@
 // 发起 Gmail OAuth2 PKCE 授权流程
 
 import { NextResponse } from "next/server";
-import { GMAIL_CONFIG, generateCodeVerifier, generateCodeChallenge } from "@/lib/auth/oauth-config";
+import { getGmailConfig, generateCodeVerifier, generateCodeChallenge } from "@/lib/auth/oauth-config";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!GMAIL_CONFIG.clientId) {
+  const config = getGmailConfig();
+
+  if (!config.clientId) {
     return NextResponse.json(
       { error: "GMAIL_CLIENT_ID 环境变量未配置" },
       { status: 500 }
     );
   }
 
-  // 生成 PKCE verifier 和 challenge
   const verifier = generateCodeVerifier();
   const challenge = await generateCodeChallenge(verifier);
   const state = crypto.randomUUID();
 
-  // 构建授权 URL
-  const authUrl = new URL(GMAIL_CONFIG.authUrl);
-  authUrl.searchParams.set("client_id", GMAIL_CONFIG.clientId);
-  authUrl.searchParams.set("redirect_uri", GMAIL_CONFIG.redirectUri);
+  const authUrl = new URL(config.authUrl);
+  authUrl.searchParams.set("client_id", config.clientId);
+  authUrl.searchParams.set("redirect_uri", config.redirectUri);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", GMAIL_CONFIG.scopes);
+  authUrl.searchParams.set("scope", config.scopes);
   authUrl.searchParams.set("state", state);
   authUrl.searchParams.set("code_challenge", challenge);
   authUrl.searchParams.set("code_challenge_method", "S256");
@@ -31,12 +33,11 @@ export async function GET() {
 
   const response = NextResponse.redirect(authUrl.toString());
 
-  // 将 verifier 和 state 存入 httpOnly cookie，回调时验证
   response.cookies.set("gmail_verifier", verifier, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 600, // 10 分钟
+    maxAge: 600,
     path: "/",
   });
 

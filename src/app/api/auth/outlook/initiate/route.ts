@@ -2,10 +2,14 @@
 // 发起 Outlook OAuth2 PKCE 授权流程
 
 import { NextResponse } from "next/server";
-import { OUTLOOK_CONFIG, generateCodeVerifier, generateCodeChallenge } from "@/lib/auth/oauth-config";
+import { getOutlookConfig, generateCodeVerifier, generateCodeChallenge } from "@/lib/auth/oauth-config";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!OUTLOOK_CONFIG.clientId) {
+  const config = getOutlookConfig();
+
+  if (!config.clientId) {
     return NextResponse.json(
       { error: "OUTLOOK_CLIENT_ID 环境变量未配置" },
       { status: 500 }
@@ -16,11 +20,11 @@ export async function GET() {
   const challenge = await generateCodeChallenge(verifier);
   const state = crypto.randomUUID();
 
-  const authUrl = new URL(OUTLOOK_CONFIG.authUrl);
-  authUrl.searchParams.set("client_id", OUTLOOK_CONFIG.clientId);
-  authUrl.searchParams.set("redirect_uri", OUTLOOK_CONFIG.redirectUri);
+  const authUrl = new URL(config.authUrl);
+  authUrl.searchParams.set("client_id", config.clientId);
+  authUrl.searchParams.set("redirect_uri", config.redirectUri);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", OUTLOOK_CONFIG.scopes);
+  authUrl.searchParams.set("scope", config.scopes);
   authUrl.searchParams.set("state", state);
   authUrl.searchParams.set("code_challenge", challenge);
   authUrl.searchParams.set("code_challenge_method", "S256");

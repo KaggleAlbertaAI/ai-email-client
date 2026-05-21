@@ -2,16 +2,19 @@
 // Gmail OAuth 回调 — 用授权码换取 token，写入加密 cookie
 
 import { NextRequest, NextResponse } from "next/server";
-import { GMAIL_CONFIG } from "@/lib/auth/oauth-config";
+import { getGmailConfig } from "@/lib/auth/oauth-config";
 import { setAuthCookie } from "@/lib/auth/cookies";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
+  const config = getGmailConfig();
+
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  // 检查授权错误
   if (error) {
     return NextResponse.redirect(new URL("/settings?error=gmail_denied", request.url));
   }
@@ -20,28 +23,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/settings?error=gmail_missing_params", request.url));
   }
 
-  // 验证 state 防 CSRF
   const savedState = request.cookies.get("gmail_state")?.value;
   if (!savedState || state !== savedState) {
     return NextResponse.redirect(new URL("/settings?error=gmail_state_mismatch", request.url));
   }
 
-  // 读取 PKCE verifier
   const verifier = request.cookies.get("gmail_verifier")?.value;
   if (!verifier) {
     return NextResponse.redirect(new URL("/settings?error=gmail_missing_verifier", request.url));
   }
 
-  // 用授权码换取 token
   const params = new URLSearchParams({
     code,
-    client_id: GMAIL_CONFIG.clientId,
-    client_secret: GMAIL_CONFIG.clientSecret,
-    redirect_uri: GMAIL_CONFIG.redirectUri,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    redirect_uri: config.redirectUri,
     grant_type: "authorization_code",
   });
 
-  const tokenResponse = await fetch(GMAIL_CONFIG.tokenUrl, {
+  const tokenResponse = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
@@ -61,10 +61,8 @@ export async function GET(request: NextRequest) {
     token_type: string;
   } = await tokenResponse.json();
 
-  // 计算过期时间（Unix 秒）
   const expiresAt = Math.floor(Date.now() / 1000) + tokenData.expires_in;
 
-  // 调用 Gmail Profile API 获取邮箱地址
   let email: string | null = null;
   try {
     const profileRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
@@ -75,10 +73,9 @@ export async function GET(request: NextRequest) {
       email = profile.emailAddress;
     }
   } catch {
-    // 获取邮箱失败不影响 token 存储
+    // 不影响 token 存储
   }
 
-  // 创建响应，写入加密 cookie
   const redirectUrl = new URL("/settings?connected=gmail", request.url);
   if (email) redirectUrl.searchParams.set("email", email);
 
@@ -91,7 +88,6 @@ export async function GET(request: NextRequest) {
     email: email ?? undefined,
   });
 
-  // 清理临时 cookie
   response.cookies.delete("gmail_verifier");
   response.cookies.delete("gmail_state");
 

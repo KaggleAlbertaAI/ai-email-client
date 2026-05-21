@@ -1,6 +1,6 @@
 // Token 生命周期管理 — 刷新过期令牌
 
-import { GMAIL_CONFIG, OUTLOOK_CONFIG } from "./oauth-config";
+import { getGmailConfig, getOutlookConfig } from "./oauth-config";
 
 export interface TokenResponse {
   accessToken: string;
@@ -16,14 +16,16 @@ export function isTokenExpired(expiresAt: number): boolean {
 
 /** 刷新 Gmail token */
 export async function refreshGmailToken(refreshToken: string): Promise<TokenResponse> {
+  const config = getGmailConfig();
+
   const params = new URLSearchParams({
-    client_id: GMAIL_CONFIG.clientId,
-    client_secret: GMAIL_CONFIG.clientSecret,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
     refresh_token: refreshToken,
     grant_type: "refresh_token",
   });
 
-  const response = await fetch(GMAIL_CONFIG.tokenUrl, {
+  const response = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
@@ -39,21 +41,23 @@ export async function refreshGmailToken(refreshToken: string): Promise<TokenResp
 
   return {
     accessToken: data.access_token,
-    refreshToken: data.refresh_token ?? refreshToken, // Google 通常不返回新 refresh_token
+    refreshToken: data.refresh_token ?? refreshToken,
     expiresIn: data.expires_in,
   };
 }
 
 /** 刷新 Outlook token */
 export async function refreshOutlookToken(refreshToken: string): Promise<TokenResponse> {
+  const config = getOutlookConfig();
+
   const params = new URLSearchParams({
-    client_id: OUTLOOK_CONFIG.clientId,
-    client_secret: OUTLOOK_CONFIG.clientSecret,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
     refresh_token: refreshToken,
     grant_type: "refresh_token",
   });
 
-  const response = await fetch(OUTLOOK_CONFIG.tokenUrl, {
+  const response = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
