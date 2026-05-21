@@ -61,8 +61,9 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error("[gmail/callback] Token exchange failed:", errorText);
-      return redirectTo("/settings?error=gmail_token_failed", request);
+      console.error("[gmail/callback] Token exchange failed:", tokenResponse.status, errorText);
+      const detail = encodeURIComponent(errorText.substring(0, 200));
+      return redirectTo(`/settings?error=gmail_token_failed&detail=${detail}`, request);
     }
 
     const tokenData: {

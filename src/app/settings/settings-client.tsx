@@ -41,7 +41,8 @@ export default function SettingsClient() {
       setOutlookStatus({ provider: "outlook", connected: true, email, loading: false });
       setNotification("Outlook 账户已成功连接" + (email ? ` (${email})` : ""));
     } else if (error) {
-      setNotification(`授权失败: ${error}`);
+      const detail = params?.get("detail");
+      setNotification(`授权失败: ${error}${detail ? `\n详情: ${decodeURIComponent(detail)}` : ""}`);
     }
   }, [params]);
 
