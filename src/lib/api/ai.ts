@@ -5,11 +5,13 @@ import type { UnifiedEmail } from "@/lib/api/types";
 
 /** 获取 AI 邮件摘要 */
 export async function generateSummary(email: UnifiedEmail): Promise<AISummary> {
+  console.log("[ai-api] Calling /api/ai/summarize for email:", email.id);
   const response = await fetch("/api/ai/summarize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
+  console.log("[ai-api] /api/ai/summarize response:", response.status);
   // API 路由已保证返回有效数据（即使 AI 失败也返回降级摘要）
   const data = await response.json();
   // 如果是错误响应，返回降级数据

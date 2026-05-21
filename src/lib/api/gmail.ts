@@ -72,6 +72,27 @@ function getHeader(headers: { name: string; value: string }[], name: string): st
   return headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? "";
 }
 
+/**
+ * 将 HTML 内容转换为纯文本
+ * 去除标签、解码实体、清理空白
+ */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/?(p|div|li|h[1-6]|tr|blockquote|article|section|header|footer)\b[^>]*>/gi, "\n")
+    .replace(/<\/?(td|th)\b[^>]*>/gi, "\t")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#[0-9]+;/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 /** 提取附件列表 */
 function extractAttachments(part: GmailPart): Array<UnifiedEmail["attachments"][0]> {
   const attachments: Array<UnifiedEmail["attachments"][0]> = [];
@@ -138,8 +159,14 @@ export function convertGmailToUnified(
   }
 
   // 从 MIME 树中提取正文
-  const plainText = extractPlainText(raw.payload);
+  let plainText = extractPlainText(raw.payload);
   const htmlText = extractHtml(raw.payload);
+
+  // Gmail 很多邮件是 HTML-only 的，没有 text/plain 部分
+  // 此时需要从 HTML 提取纯文本作为 body.plain，确保 AI 摘要有可用内容
+  if (!plainText && htmlText) {
+    plainText = htmlToPlainText(htmlText);
+  }
 
   // 从 labelIds 推断邮件状态
   const labels = raw.labelIds;

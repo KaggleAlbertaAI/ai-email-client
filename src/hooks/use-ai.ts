@@ -23,6 +23,8 @@ export function useAI(): UseAIReturn {
 
   /** 生成邮件摘要 */
   const summarize = useCallback(async (email: UnifiedEmail) => {
+    console.log("[useAI] summarize called for email:", email.id, "hasAiCache:", !!email.ai?.summary);
+
     // 如果邮件已有 AI 摘要缓存，直接使用
     if (email.ai?.summary) {
       setSummary({

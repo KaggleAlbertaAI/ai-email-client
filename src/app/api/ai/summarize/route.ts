@@ -6,10 +6,12 @@ import type { UnifiedEmail } from "@/lib/api/types";
 
 function fallbackSummary(email: unknown) {
   const e = email as Record<string, unknown>;
-  const body = (e.body as Record<string, unknown> | undefined)?.plain as string | undefined;
-  const text = body || "";
+  const body = (e.body as Record<string, unknown> | undefined);
+  // 优先用 plain，没有则尝试从 html 提取
+  const text = (body?.plain as string) || (body?.html as string) || "";
+  const cleaned = text.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
   return {
-    summary: text.slice(0, 50) + (text.length > 50 ? "..." : ""),
+    summary: cleaned.slice(0, 50) + (cleaned.length > 50 ? "..." : ""),
     keyPoints: [] as string[],
     sentiment: "neutral" as const,
     requiresResponse: false,
@@ -21,11 +23,37 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const email = body.email;
 
-    if (!email?.body?.plain) {
+    if (!email?.body) {
       return NextResponse.json(
         { code: "INVALID_INPUT", message: "缺少邮件数据" },
         { status: 400 }
       );
+    }
+
+    // 检查 body.plain 和 body.html，至少需要一个有内容
+    const hasPlain = !!email.body?.plain?.trim();
+    const hasHtml = !!email.body?.html?.trim();
+    if (!hasPlain && !hasHtml) {
+      console.log("[ai/summarize] Email body is empty (no plain or html content), returning fallback for email:", email.id);
+      return NextResponse.json(fallbackSummary(email));
+    }
+
+    // 如果 plain 为空但 html 有内容，尝试从 html 提取纯文本
+    if (!hasPlain && hasHtml) {
+      email.body.plain = email.body.html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/?(p|div|li|h[1-6]|tr|blockquote)\b[^>]*>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#[0-9]+;/g, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+      console.log("[ai/summarize] Converted HTML body to plain text for email:", email.id);
     }
 
     // 检查 AI 环境变量
