@@ -331,7 +331,7 @@ export default function Home() {
                 className="fixed inset-0 z-40"
                 onClick={() => setAccountDropdownOpen(false)}
               />
-              <div className="absolute z-50 mt-1 w-full rounded-lg border bg-popover p-1 shadow-lg">
+              <div className="absolute z-50 mt-1 w-full rounded-lg border bg-white p-1 shadow-xl">
                 <button
                   onClick={() => {
                     setSelectedAccountId("all");
@@ -861,7 +861,7 @@ export default function Home() {
               </div>
 
               {/* 正文 */}
-              <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+              <div className="mt-6 min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
                 {selectedEmail.body.plain}
               </div>
 
