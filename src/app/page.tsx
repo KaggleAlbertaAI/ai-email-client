@@ -162,14 +162,18 @@ export default function Home() {
   // 选择邮件并触发 AI 处理
   const handleSelectEmail = useCallback(
     (email: UnifiedEmail) => {
+      console.log("[page] handleSelectEmail clicked, id:", email.id, "has body.plain:", !!email.body?.plain, "plainLen:", email.body?.plain?.length || 0, "has body.html:", !!email.body?.html);
       selectEmail(email);
       setMobileView("detail");
 
       // 首次选中时触发 AI 摘要和分类
       if (!summarizedIds.has(email.id)) {
+        console.log("[page] First time selecting this email, triggering AI summary and classify");
         summarize(email);
         classify(email);
         setSummarizedIds((prev) => new Set(prev).add(email.id));
+      } else {
+        console.log("[page] Email already summarized, skipping AI calls");
       }
     },
     [selectEmail, summarizedIds, summarize, classify]
