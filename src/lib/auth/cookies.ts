@@ -1,25 +1,11 @@
-// 加密 Cookie 读写 — 使用 jose 库加密 token，存储在客户端 Cookie 中
+// 纯 httpOnly Cookie 存储 OAuth token（不加密，httpOnly + secure 保证安全）
 
-import { EncryptJWT, jwtDecrypt } from "jose";
 import type { NextRequest, NextResponse } from "next/server";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 天
 
-/** 获取加密密钥 — 运行时读取，避免构建时缓存为空 */
-function getSecretKey(): Uint8Array {
-  const key = process.env.COOKIE_ENCRYPTION_KEY ?? "dev-fallback-key-do-not-use-in-production";
-  // 确保密钥长度为 32 字节
-  const encoder = new TextEncoder();
-  const encoded = encoder.encode(key);
-  if (encoded.length === 32) return encoded;
-  // 不足 32 字节则填充，超过则截取
-  const result = new Uint8Array(32);
-  result.set(encoded.length >= 32 ? encoded.slice(0, 32) : encoded);
-  return result;
-}
-
-/** 将 token 数据写入加密 Cookie */
-export async function setAuthCookie(
+/** 将 token 写入 httpOnly Cookie */
+export function setAuthCookie(
   response: NextResponse,
   provider: "gmail" | "outlook",
   tokenData: {
@@ -29,21 +15,32 @@ export async function setAuthCookie(
     email?: string;
   }
 ) {
-  const cookieName = `auth_${provider}`;
-  const secret = getSecretKey();
-
-  const jwt = await new EncryptJWT({
-    accessToken: tokenData.accessToken,
-    refreshToken: tokenData.refreshToken ?? null,
-    expiresAt: tokenData.expiresAt,
-    email: tokenData.email ?? null,
-  })
-    .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
-    .setExpirationTime(tokenData.expiresAt)
-    .encrypt(secret);
-
-  response.cookies.set(cookieName, jwt, {
+  // access token — httpOnly，仅服务端可读
+  response.cookies.set(`auth_${provider}`, tokenData.accessToken, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: COOKIE_MAX_AGE,
+    path: "/",
+  });
+
+  // refresh token — httpOnly（如果存在）
+  if (tokenData.refreshToken) {
+    response.cookies.set(`auth_${provider}_refresh`, tokenData.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: COOKIE_MAX_AGE,
+      path: "/",
+    });
+  }
+
+  // 元数据 — 非 httpOnly，客户端可读取用于展示状态
+  response.cookies.set(`auth_${provider}_meta`, JSON.stringify({
+    email: tokenData.email ?? null,
+    expiresAt: tokenData.expiresAt,
+  }), {
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: COOKIE_MAX_AGE,
@@ -51,38 +48,39 @@ export async function setAuthCookie(
   });
 }
 
-/** 从请求中读取并解密 Cookie */
-export async function getAuthCookie(
+/** 从请求中获取 access token */
+export function getAuthToken(
   request: NextRequest,
   provider: "gmail" | "outlook"
-): Promise<{
-  accessToken: string;
-  refreshToken: string | null;
-  expiresAt: number;
-  email: string | null;
-} | null> {
-  const cookieName = `auth_${provider}`;
-  const encrypted = request.cookies.get(cookieName)?.value;
-  if (!encrypted) return null;
+): string | null {
+  return request.cookies.get(`auth_${provider}`)?.value ?? null;
+}
 
+/** 从请求中获取 refresh token */
+export function getRefreshToken(
+  request: NextRequest,
+  provider: "gmail" | "outlook"
+): string | null {
+  return request.cookies.get(`auth_${provider}_refresh`)?.value ?? null;
+}
+
+/** 从请求中获取元数据（客户端也可读） */
+export function getAuthMetadata(
+  request: NextRequest,
+  provider: "gmail" | "outlook"
+): { email: string | null; expiresAt: number } | null {
+  const raw = request.cookies.get(`auth_${provider}_meta`)?.value;
+  if (!raw) return null;
   try {
-    const secret = getSecretKey();
-    const { payload } = await jwtDecrypt(encrypted, secret);
-
-    return {
-      accessToken: payload.accessToken as string,
-      refreshToken: (payload.refreshToken as string | null) ?? null,
-      expiresAt: payload.expiresAt as number,
-      email: (payload.email as string | null) ?? null,
-    };
+    return JSON.parse(raw);
   } catch {
     return null;
   }
 }
 
-/** 清除指定 provider 的 Cookie */
+/** 清除指定 provider 的所有 Cookie */
 export function clearAuthCookie(response: NextResponse, provider: "gmail" | "outlook") {
   response.cookies.delete(`auth_${provider}`);
-  // 同时清除 PKCE verifier cookie
-  response.cookies.delete(`${provider}_verifier`);
+  response.cookies.delete(`auth_${provider}_refresh`);
+  response.cookies.delete(`auth_${provider}_meta`);
 }

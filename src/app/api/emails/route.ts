@@ -7,7 +7,7 @@ import { convertGmailToUnified } from "@/lib/api/gmail";
 import { convertOutlookToUnified } from "@/lib/api/outlook";
 import { convertImapToUnified } from "@/lib/api/imap";
 import { PAGE_SIZE } from "@/lib/constants";
-import { decryptTokenCookie } from "@/lib/auth/token-resolver";
+import { resolveTokenFromCookie } from "@/lib/auth/token-resolver";
 
 export const dynamic = "force-dynamic";
 
@@ -99,16 +99,16 @@ function getDemoEmails(): UnifiedEmail[] {
 
 /**
  * 从 middleware 注入的请求头提取 OAuth Token
- * 如果 header 为空，则直接解密 cookie（Vercel 下 middleware header 注入不可靠）
+ * 如果 header 为空，则直接从 httpOnly cookie 读取
  */
-async function extractToken(request: NextRequest, provider: "gmail" | "outlook"): Promise<string | null> {
+function extractToken(request: NextRequest, provider: "gmail" | "outlook"): string | null {
   // 先尝试 middleware 注入的 header
   const headerName = provider === "gmail" ? "x-auth-token-gmail" : "x-auth-token-outlook";
   const fromHeader = request.headers.get(headerName);
   if (fromHeader) return fromHeader;
 
-  // 直接从 cookie 解密
-  return await decryptTokenCookie(request, provider);
+  // 直接从 httpOnly cookie 读取
+  return resolveTokenFromCookie(request, provider);
 }
 
 /**
@@ -445,7 +445,7 @@ async function fetchMessagesForAccount(
 ): Promise<PaginatedResponse<UnifiedEmail>> {
   switch (account.protocol) {
     case "gmail": {
-      const token = await extractToken(request, "gmail");
+      const token = extractToken(request, "gmail");
       const fallback = getFallbackGmailToken();
       const finalToken = token ?? fallback;
       console.log("[emails] Gmail token:", finalToken ? `present (${finalToken.length} chars), source=${token ? "cookie" : "env"}` : "none");
@@ -461,7 +461,7 @@ async function fetchMessagesForAccount(
     }
 
     case "graph": {
-      const token = await extractToken(request, "outlook");
+      const token = extractToken(request, "outlook");
       const fallback = getFallbackOutlookToken();
       const finalToken = token ?? fallback;
       if (!finalToken) {

@@ -46,6 +46,34 @@ export default function SettingsClient() {
     }
   }, [params]);
 
+  // 从 cookie 读取连接状态（客户端可读的 meta cookie）
+  useEffect(() => {
+    function readCookie(provider: "gmail" | "outlook") {
+      const name = `auth_${provider}_meta`;
+      const match = document.cookie.split("; ").find(row => row.startsWith(name + "="));
+      if (!match) return null;
+      try {
+        return JSON.parse(decodeURIComponent(match.split("=")[1]));
+      } catch {
+        return null;
+      }
+    }
+
+    const gmailMeta = readCookie("gmail");
+    if (gmailMeta) {
+      setGmailStatus({ provider: "gmail", connected: true, email: gmailMeta.email, loading: false });
+    } else {
+      setGmailStatus(prev => ({ ...prev, loading: false }));
+    }
+
+    const outlookMeta = readCookie("outlook");
+    if (outlookMeta) {
+      setOutlookStatus({ provider: "outlook", connected: true, email: outlookMeta.email, loading: false });
+    } else {
+      setOutlookStatus(prev => ({ ...prev, loading: false }));
+    }
+  }, []);
+
   // 检查账户连接状态
   const checkStatus = useCallback(async () => {
     try {
@@ -220,8 +248,7 @@ export default function SettingsClient() {
 GMAIL_CLIENT_SECRET=your-google-oauth-client-secret
 OUTLOOK_CLIENT_ID=your-microsoft-oauth-client-id
 OUTLOOK_CLIENT_SECRET=your-microsoft-oauth-client-secret
-NEXT_PUBLIC_BASE_URL=https://your-app.vercel.app
-COOKIE_ENCRYPTION_KEY=your-32-byte-random-key`}
+NEXT_PUBLIC_BASE_URL=https://your-app.vercel.app`}
             </pre>
           </div>
         </div>

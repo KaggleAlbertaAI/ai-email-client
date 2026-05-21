@@ -1,8 +1,8 @@
 // Middleware: 为 API 请求注入 OAuth token 并自动刷新
-// 从加密 cookie 读取 token，检查是否过期，过期则刷新，然后注入请求头
+// 从 httpOnly cookie 读取 token，检查是否过期，过期则刷新，然后注入请求头
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthCookie, setAuthCookie } from "@/lib/auth/cookies";
+import { getAuthToken, getRefreshToken, getAuthMetadata, setAuthCookie, clearAuthCookie } from "@/lib/auth/cookies";
 import { isTokenExpired, refreshGmailToken, refreshOutlookToken } from "@/lib/auth/token-manager";
 
 const PROTECTED_PREFIXES = ["/api/emails", "/api/mail"];
@@ -18,95 +18,93 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 调试日志：显示收到的 cookie 列表
-  const cookieNames = request.cookies.getAll().map(c => c.name);
-  console.log("[middleware]", pathname, "cookies:", cookieNames);
+  const gmailAccessToken = getAuthToken(request, "gmail");
+  const outlookAccessToken = getAuthToken(request, "outlook");
 
-  let gmailToken = await getAuthCookie(request, "gmail");
-  let outlookToken = await getAuthCookie(request, "outlook");
-
-  console.log("[middleware] gmail token:", gmailToken ? `present, expiresAt=${gmailToken.expiresAt}` : "none");
-  console.log("[middleware] outlook token:", outlookToken ? `present, expiresAt=${outlookToken.expiresAt}` : "none");
+  const gmailMeta = getAuthMetadata(request, "gmail");
+  const outlookMeta = getAuthMetadata(request, "outlook");
 
   // Gmail token 刷新
-  if (gmailToken && isTokenExpired(gmailToken.expiresAt)) {
-    try {
-      if (gmailToken.refreshToken) {
-        const refreshed = await refreshGmailToken(gmailToken.refreshToken);
+  if (gmailAccessToken && gmailMeta && isTokenExpired(gmailMeta.expiresAt)) {
+    const gmailRefresh = getRefreshToken(request, "gmail");
+    if (gmailRefresh) {
+      try {
+        const refreshed = await refreshGmailToken(gmailRefresh);
         const newExpiresAt = Math.floor(Date.now() / 1000) + refreshed.expiresIn;
 
         const headers = new Headers(request.headers);
         headers.set("x-auth-token-gmail", refreshed.accessToken);
 
         const response = NextResponse.next({ request: { headers } });
-        await setAuthCookie(response, "gmail", {
+        setAuthCookie(response, "gmail", {
           accessToken: refreshed.accessToken,
           refreshToken: refreshed.refreshToken,
           expiresAt: newExpiresAt,
-          email: gmailToken.email ?? undefined,
+          email: gmailMeta.email ?? undefined,
         });
 
         console.log("[middleware] gmail token refreshed");
         return response;
-      } else {
+      } catch (err) {
+        console.error("[middleware] gmail refresh failed:", err);
         const headers = new Headers(request.headers);
         const response = NextResponse.next({ request: { headers } });
-        response.cookies.delete("auth_gmail");
-        console.log("[middleware] gmail: no refresh token, cleared cookie");
+        clearAuthCookie(response, "gmail");
         return response;
       }
-    } catch (err) {
-      console.error("[middleware] gmail refresh failed:", err);
+    } else {
       const headers = new Headers(request.headers);
       const response = NextResponse.next({ request: { headers } });
-      response.cookies.delete("auth_gmail");
+      clearAuthCookie(response, "gmail");
+      console.log("[middleware] gmail: no refresh token, cleared cookie");
       return response;
     }
   }
 
   // Outlook token 刷新
-  if (outlookToken && isTokenExpired(outlookToken.expiresAt)) {
-    try {
-      if (outlookToken.refreshToken) {
-        const refreshed = await refreshOutlookToken(outlookToken.refreshToken);
+  if (outlookAccessToken && outlookMeta && isTokenExpired(outlookMeta.expiresAt)) {
+    const outlookRefresh = getRefreshToken(request, "outlook");
+    if (outlookRefresh) {
+      try {
+        const refreshed = await refreshOutlookToken(outlookRefresh);
         const newExpiresAt = Math.floor(Date.now() / 1000) + refreshed.expiresIn;
 
         const headers = new Headers(request.headers);
         headers.set("x-auth-token-outlook", refreshed.accessToken);
 
         const response = NextResponse.next({ request: { headers } });
-        await setAuthCookie(response, "outlook", {
+        setAuthCookie(response, "outlook", {
           accessToken: refreshed.accessToken,
           refreshToken: refreshed.refreshToken,
           expiresAt: newExpiresAt,
-          email: outlookToken.email ?? undefined,
+          email: outlookMeta.email ?? undefined,
         });
 
         console.log("[middleware] outlook token refreshed");
         return response;
-      } else {
+      } catch (err) {
+        console.error("[middleware] outlook refresh failed:", err);
         const headers = new Headers(request.headers);
         const response = NextResponse.next({ request: { headers } });
-        response.cookies.delete("auth_outlook");
+        clearAuthCookie(response, "outlook");
         return response;
       }
-    } catch (err) {
-      console.error("[middleware] outlook refresh failed:", err);
+    } else {
       const headers = new Headers(request.headers);
       const response = NextResponse.next({ request: { headers } });
-      response.cookies.delete("auth_outlook");
+      clearAuthCookie(response, "outlook");
       return response;
     }
   }
 
   // Token 有效或无需刷新，注入请求头
   const headers = new Headers(request.headers);
-  if (gmailToken) {
-    headers.set("x-auth-token-gmail", gmailToken.accessToken);
+  if (gmailAccessToken) {
+    headers.set("x-auth-token-gmail", gmailAccessToken);
     console.log("[middleware] gmail token injected");
   }
-  if (outlookToken) {
-    headers.set("x-auth-token-outlook", outlookToken.accessToken);
+  if (outlookAccessToken) {
+    headers.set("x-auth-token-outlook", outlookAccessToken);
     console.log("[middleware] outlook token injected");
   }
 
