@@ -7,7 +7,7 @@ import type { UnifiedEmail } from "@/lib/api/types";
 //  大模型提供商配置
 // ---------------------------------------------------------------------------
 
-export type AIProvider = "siliconflow" | "deepseek" | "openai-compatible";
+export type AIProvider = "siliconflow" | "deepseek" | "openai-compatible" | "aliyun";
 
 export interface AIProviderConfig {
   /** 提供商类型 */
@@ -53,6 +53,11 @@ function getProviderConfig(): AIProviderConfig {
       provider: "openai-compatible",
       baseUrl: baseUrl,
       model: model,
+    },
+    aliyun: {
+      provider: "aliyun",
+      baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      model: "qwen-plus",
     },
   };
 

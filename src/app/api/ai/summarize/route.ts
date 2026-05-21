@@ -4,9 +4,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { UnifiedEmail } from "@/lib/api/types";
 
-function fallbackSummary(email: unknown) {
-  const e = email as Record<string, unknown>;
-  const body = (e.body as Record<string, unknown> | undefined);
+function fallbackSummary(email: Record<string, unknown> | undefined) {
+  if (!email) {
+    return { summary: "暂无内容", keyPoints: [] as string[], sentiment: "neutral" as const, requiresResponse: false };
+  }
+  const body = (email.body as Record<string, unknown> | undefined);
   // 优先用 plain，没有则尝试从 html 提取
   const text = (body?.plain as string) || (body?.html as string) || "";
   const cleaned = text.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
@@ -19,41 +21,56 @@ function fallbackSummary(email: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  // 先解析请求体，避免 catch 块中重复读取失败
+  let requestData: Record<string, unknown> = {};
   try {
-    const body = await request.json();
-    const email = body.email;
+    requestData = await request.json();
+  } catch {
+    // 请求体解析失败，使用空对象
+  }
 
-    if (!email?.body) {
+  try {
+    const email = requestData.email;
+
+    if (!email || typeof email !== "object") {
       return NextResponse.json(
         { code: "INVALID_INPUT", message: "缺少邮件数据" },
         { status: 400 }
       );
     }
 
+    const emailObj = email as Record<string, unknown>;
+    const body = (emailObj.body as Record<string, unknown> | undefined) || {};
+    const bodyPlain = (body.plain as string) || "";
+    const bodyHtml = (body.html as string) || "";
+
     // 检查 body.plain 和 body.html，至少需要一个有内容
-    const hasPlain = !!email.body?.plain?.trim();
-    const hasHtml = !!email.body?.html?.trim();
+    const hasPlain = !!bodyPlain.trim();
+    const hasHtml = !!bodyHtml.trim();
     if (!hasPlain && !hasHtml) {
-      console.log("[ai/summarize] Email body is empty (no plain or html content), returning fallback for email:", email.id);
-      return NextResponse.json(fallbackSummary(email));
+      console.log("[ai/summarize] Email body is empty (no plain or html content), returning fallback for email:", emailObj.id);
+      return NextResponse.json(fallbackSummary(emailObj));
     }
 
     // 如果 plain 为空但 html 有内容，尝试从 html 提取纯文本
     if (!hasPlain && hasHtml) {
-      email.body.plain = email.body.html
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<\/?(p|div|li|h[1-6]|tr|blockquote)\b[^>]*>/gi, "\n")
-        .replace(/<[^>]+>/g, "")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&#[0-9]+;/g, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-      console.log("[ai/summarize] Converted HTML body to plain text for email:", email.id);
+      (emailObj as Record<string, unknown>).body = {
+        plain: bodyHtml
+          .replace(/<br\s*\/?>/gi, "\n")
+          .replace(/<\/?(p|div|li|h[1-6]|tr|blockquote)\b[^>]*>/gi, "\n")
+          .replace(/<[^>]+>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&#[0-9]+;/g, "")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim(),
+        html: bodyHtml,
+      };
+      console.log("[ai/summarize] Converted HTML body to plain text for email:", emailObj.id);
     }
 
     // 检查 AI 环境变量
@@ -66,13 +83,12 @@ export async function POST(request: NextRequest) {
 
     // 动态导入 agent，避免构建时依赖
     const { generateSummary } = await import("@/lib/ai/agent");
-    const summary = await generateSummary(email as UnifiedEmail);
+    const summary = await generateSummary(emailObj as unknown as UnifiedEmail);
     console.log("[ai/summarize] summary generated:", summary.summary.slice(0, 30) + "...");
     return NextResponse.json(summary);
   } catch (error) {
     // 降级：返回邮件正文的截断版本
     console.error("[ai/summarize] Error:", error);
-    const body = await request.json().catch(() => ({}));
-    return NextResponse.json(fallbackSummary(body.email));
+    return NextResponse.json(fallbackSummary(requestData.email as Record<string, unknown> | undefined));
   }
 }
