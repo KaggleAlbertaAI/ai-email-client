@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import type { ApiError, UnifiedEmail } from "@/lib/api/types";
+import { resolveToken } from "@/lib/auth/token-resolver";
 
 // 内存存储已发送邮件（容器生命周期内有效）
 const sentEmails: UnifiedEmail[] = [];
@@ -19,16 +20,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查是否有 Gmail 令牌
-    const gmailToken = process.env.GMAIL_ACCESS_TOKEN ?? null;
+    // 优先使用 middleware 注入的 Gmail token（OAuth 登录用户）
+    const gmailToken = resolveToken(request, "gmail");
     if (gmailToken) {
       return await sendViaGmail(gmailToken, to, cc, bcc, subject, emailBody);
     }
 
-    // 检查是否有 Outlook 令牌
-    const outlookToken = process.env.OUTLOOK_ACCESS_TOKEN ?? null;
+    // 其次使用 middleware 注入的 Outlook token
+    const outlookToken = resolveToken(request, "outlook");
     if (outlookToken) {
       return await sendViaOutlook(outlookToken, to, cc, bcc, subject, emailBody);
+    }
+
+    // 回退到环境变量（开发 / 单账户场景）
+    const envGmailToken = process.env.GMAIL_ACCESS_TOKEN ?? null;
+    if (envGmailToken) {
+      return await sendViaGmail(envGmailToken, to, cc, bcc, subject, emailBody);
+    }
+
+    const envOutlookToken = process.env.OUTLOOK_ACCESS_TOKEN ?? null;
+    if (envOutlookToken) {
+      return await sendViaOutlook(envOutlookToken, to, cc, bcc, subject, emailBody);
     }
 
     // Demo 模式：存储到内存并返回成功

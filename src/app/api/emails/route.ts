@@ -91,29 +91,27 @@ function getDemoEmails(): UnifiedEmail[] {
 }
 
 // ---------------------------------------------------------------------------
-//  凭据获取 — 从请求头 Authorization 获取 OAuth Token
+//  凭据获取 — 从 middleware 注入的请求头读取 OAuth Token
 // ---------------------------------------------------------------------------
 
 /**
- * 从请求头提取 Bearer Token
- * 前端需要在请求中携带: Authorization: Bearer <access_token>
+ * 从 middleware 注入的请求头提取 OAuth Token
+ * middleware 已从加密 cookie 读取并注入 x-auth-token-gmail / x-auth-token-outlook
  */
-function extractBearerToken(request: NextRequest): string | null {
-  const auth = request.headers.get("authorization");
-  if (!auth || !auth.startsWith("Bearer ")) return null;
-  return auth.slice(7);
+function extractBearerToken(request: NextRequest, provider: "gmail" | "outlook"): string | null {
+  return request.headers.get(provider === "gmail" ? "x-auth-token-gmail" : "x-auth-token-outlook");
 }
 
 /**
- * 从环境变量获取默认 Gmail 访问令牌
- * 适用于单账户场景，无需前端传 token
+ * 从环境变量获取默认 Gmail 访问令牌（fallback）
+ * 适用于未配置 OAuth 的开发环境
  */
 function getFallbackGmailToken(): string | null {
   return process.env.GMAIL_ACCESS_TOKEN ?? null;
 }
 
 /**
- * 从环境变量获取默认 Outlook 访问令牌
+ * 从环境变量获取默认 Outlook 访问令牌（fallback）
  */
 function getFallbackOutlookToken(): string | null {
   return process.env.OUTLOOK_ACCESS_TOKEN ?? null;
@@ -429,7 +427,7 @@ async function fetchMessagesForAccount(
 ): Promise<PaginatedResponse<UnifiedEmail>> {
   switch (account.protocol) {
     case "gmail": {
-      const token = extractBearerToken(request) ?? getFallbackGmailToken();
+      const token = extractBearerToken(request, "gmail") ?? getFallbackGmailToken();
       if (!token) {
         throw new Error(
           "缺少 Gmail 访问令牌。请在请求头中携带 Authorization: Bearer <token>，或设置环境变量 GMAIL_ACCESS_TOKEN"
@@ -441,7 +439,7 @@ async function fetchMessagesForAccount(
     }
 
     case "graph": {
-      const token = extractBearerToken(request) ?? getFallbackOutlookToken();
+      const token = extractBearerToken(request, "outlook") ?? getFallbackOutlookToken();
       if (!token) {
         throw new Error(
           "缺少 Outlook 访问令牌。请在请求头中携带 Authorization: Bearer <token>，或设置环境变量 OUTLOOK_ACCESS_TOKEN"

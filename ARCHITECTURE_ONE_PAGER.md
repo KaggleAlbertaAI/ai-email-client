@@ -123,6 +123,7 @@ src/
 | PWA Install Prompt | ✅ | `beforeinstallprompt` event, 30-day dismiss |
 | Unit Tests | ✅ | Vitest, 9 tests for protocol adapters |
 | Demo Mode | ✅ | Fallback when no OAuth tokens configured |
+| OAuth2 PKCE Auth (Gmail/Outlook) | ✅ | Encrypted cookie token storage, auto-refresh via middleware |
 
 ---
 
