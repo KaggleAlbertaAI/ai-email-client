@@ -371,6 +371,7 @@ function applyFilters(
  * 返回：PaginatedResponse<UnifiedEmail>
  */
 export async function GET(request: NextRequest) {
+  console.log("[emails] === /api/emails route handler invoked ===");
   try {
     const { searchParams } = request.nextUrl;
     const accountId = searchParams.get("accountId");
