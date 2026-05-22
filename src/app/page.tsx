@@ -321,19 +321,10 @@ export default function Home() {
       {/* ===== 左侧侧边栏 (mobile: overlay drawer, desktop: fixed panel) ===== */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 flex-col border-r bg-white p-4 transition-transform duration-200 md:relative md:z-auto md:translate-x-0 md:bg-muted/30",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          "md:flex"
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-white p-4 transition-transform duration-200 md:relative md:z-auto md:translate-x-0 md:bg-muted/30",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Mobile sidebar backdrop */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-[-1] bg-black/30 md:hidden"
-            onClick={() => { if (sidebarOpen) toggleSidebar(); }}
-          />
-        )}
-
         {/* 应用 Logo */}
         <div className="mb-6 flex items-center gap-2 px-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -348,7 +339,7 @@ export default function Home() {
               <path d="M22 4L12 13 2 4" />
             </svg>
           </div>
-          <span className={cn("font-bold tracking-tight", "lg:inline hidden")}>AI Mail</span>
+          <span className="font-bold tracking-tight">AI Mail</span>
         </div>
 
         {/* 账户切换下拉菜单 */}
@@ -445,7 +436,7 @@ export default function Home() {
                 )}
               >
                 {ICONS[folder.icon]}
-                <span className="flex-1 truncate lg:inline hidden">{folder.name}</span>
+                <span className="flex-1 truncate">{folder.name}</span>
                 {unread > 0 && (
                   <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                     {unread}
@@ -466,10 +457,18 @@ export default function Home() {
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
             </svg>
-            <span className="flex-1 truncate lg:inline hidden">Settings</span>
+            <span className="flex-1 truncate">Settings</span>
           </button>
         </div>
       </aside>
+
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 md:hidden"
+          onClick={() => { if (sidebarOpen) toggleSidebar(); }}
+        />
+      )}
 
       {/* ===== 中间邮件列表 ===== */}
       <div
