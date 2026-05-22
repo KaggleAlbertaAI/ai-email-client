@@ -318,13 +318,22 @@ export default function Home() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      {/* ===== 左侧侧边栏 ===== */}
+      {/* ===== 左侧侧边栏 (mobile: overlay drawer, desktop: fixed panel) ===== */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-64 flex-col border-r bg-muted/30 p-4 transition-transform md:relative md:translate-x-0",
-          sidebarOpen ? "flex" : "-translate-x-full md:flex md:w-20 lg:w-64"
+          "fixed inset-y-0 left-0 z-50 w-64 flex-col border-r bg-muted/30 p-4 transition-transform duration-200 md:relative md:z-auto md:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          "md:flex"
         )}
       >
+        {/* Mobile sidebar backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-[-1] bg-black/30 md:hidden"
+            onClick={() => { if (sidebarOpen) toggleSidebar(); }}
+          />
+        )}
+
         {/* 应用 Logo */}
         <div className="mb-6 flex items-center gap-2 px-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -423,7 +432,11 @@ export default function Home() {
             return (
               <button
                 key={folder.id}
-                onClick={() => handleFolderChange(folder.id)}
+                onClick={() => {
+                  handleFolderChange(folder.id);
+                  // Close sidebar on mobile after selecting a folder
+                  if (sidebarOpen) toggleSidebar();
+                }}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                   activeFolder === folder.id
@@ -461,10 +474,12 @@ export default function Home() {
       {/* ===== 中间邮件列表 ===== */}
       <div
         className={cn(
-          "flex min-w-0 flex-col border-r md:flex",
-          "w-full md:w-96 lg:w-[420px]",
-          // 移动端：只显示列表或详情
-          mobileView === "detail" && "hidden md:flex"
+          "flex min-w-0 flex-col border-r",
+          // Mobile: full width, only show in list view
+          "w-full",
+          mobileView !== "list" && "hidden",
+          // Desktop: always visible, fixed width
+          "md:block md:w-96 lg:w-[420px]"
         )}
       >
         {/* 列表头部 */}
@@ -530,9 +545,13 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => openCompose("new")}
-                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 md:inline"
               >
-                Compose
+                <span className="hidden sm:inline">Compose</span>
+                <svg className="h-4 w-4 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
               </button>
               <span className="text-xs text-muted-foreground">
                 {activeFolder === "sent" ? sentEmails.length : emails.length} emails
@@ -726,9 +745,11 @@ export default function Home() {
       <div
         className={cn(
           "flex min-w-0 flex-1 flex-col bg-background",
-          "hidden md:flex",
-          // 移动端：只显示详情
-          mobileView === "detail" && "flex md:flex"
+          // Mobile: full width, only show in detail view
+          "hidden w-full",
+          mobileView === "detail" && "flex",
+          // Desktop: always visible
+          "md:flex"
         )}
       >
         {selectedEmail ? (
