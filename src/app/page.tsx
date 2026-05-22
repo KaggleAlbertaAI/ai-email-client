@@ -321,7 +321,7 @@ export default function Home() {
       {/* ===== 左侧侧边栏 (mobile: overlay drawer, desktop: fixed panel) ===== */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 flex-col border-r bg-muted/30 p-4 transition-transform duration-200 md:relative md:z-auto md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 flex-col border-r bg-white p-4 transition-transform duration-200 md:relative md:z-auto md:translate-x-0 md:bg-muted/30",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
           "md:flex"
         )}
@@ -474,10 +474,10 @@ export default function Home() {
       {/* ===== 中间邮件列表 ===== */}
       <div
         className={cn(
-          "flex min-w-0 flex-col border-r",
-          // Mobile: full width, only show in list view
+          "flex min-w-0 flex-col border-r bg-background",
+          // Mobile: full width, hide when in detail view
           "w-full",
-          mobileView !== "list" && "hidden",
+          mobileView === "detail" ? "hidden" : "block",
           // Desktop: always visible, fixed width
           "md:block md:w-96 lg:w-[420px]"
         )}
@@ -745,9 +745,9 @@ export default function Home() {
       <div
         className={cn(
           "flex min-w-0 flex-1 flex-col bg-background",
-          // Mobile: full width, only show in detail view
-          "hidden w-full",
-          mobileView === "detail" && "flex",
+          // Mobile: full width, hide when in list view
+          "w-full",
+          mobileView === "detail" ? "block" : "hidden",
           // Desktop: always visible
           "md:flex"
         )}
