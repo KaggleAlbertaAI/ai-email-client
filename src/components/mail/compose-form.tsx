@@ -208,38 +208,38 @@ export function ComposeForm({
         )}
 
         {/* 收件人 */}
-        <div className="flex items-center border-b py-3">
-          <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">To</label>
+        <div className="flex min-w-0 items-center border-b py-3">
+          <label className="w-14 shrink-0 text-sm font-medium text-muted-foreground">To</label>
           <input
             type="text"
             value={to}
             onChange={(e) => setTo(e.target.value)}
             placeholder="Enter recipient email address"
-            className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
+            className="min-w-0 flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
           />
         </div>
 
         {/* CC / BCC */}
         {showCc && (
           <>
-            <div className="flex items-center border-b py-3">
-              <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">CC</label>
+            <div className="flex min-w-0 items-center border-b py-3">
+              <label className="w-14 shrink-0 text-sm font-medium text-muted-foreground">CC</label>
               <input
                 type="text"
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
                 placeholder="Enter CC email address"
-                className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
+                className="min-w-0 flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
               />
             </div>
-            <div className="flex items-center border-b py-3">
-              <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">BCC</label>
+            <div className="flex min-w-0 items-center border-b py-3">
+              <label className="w-14 shrink-0 text-sm font-medium text-muted-foreground">BCC</label>
               <input
                 type="text"
                 value={bcc}
                 onChange={(e) => setBcc(e.target.value)}
                 placeholder="Enter BCC email address"
-                className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
+                className="min-w-0 flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
               />
             </div>
           </>
@@ -256,14 +256,14 @@ export function ComposeForm({
         )}
 
         {/* 主题 */}
-        <div className="flex items-center border-b py-3">
-          <label className="w-16 shrink-0 text-sm font-medium text-muted-foreground">Subject</label>
+        <div className="flex min-w-0 items-center border-b py-3">
+          <label className="w-14 shrink-0 text-sm font-medium text-muted-foreground">Subject</label>
           <input
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Email subject"
-            className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
+            className="min-w-0 flex-1 border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-0"
           />
         </div>
 

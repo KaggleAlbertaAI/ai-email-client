@@ -317,7 +317,7 @@ export default function Home() {
   }, [loading, emails.length, loadMore]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
       {/* ===== 左侧侧边栏 ===== */}
       <aside
         className={cn(
@@ -364,7 +364,7 @@ export default function Home() {
                 className="fixed inset-0 z-40"
                 onClick={() => setAccountDropdownOpen(false)}
               />
-              <div className="absolute z-50 mt-1 w-full rounded-lg border bg-white p-1 shadow-xl">
+              <div className="absolute z-50 mt-1 w-full max-w-[280px] rounded-lg border bg-white p-1 shadow-xl">
                 <button
                   onClick={() => {
                     setSelectedAccountId("all");
@@ -461,7 +461,7 @@ export default function Home() {
       {/* ===== 中间邮件列表 ===== */}
       <div
         className={cn(
-          "flex flex-col border-r md:flex",
+          "flex min-w-0 flex-col border-r md:flex",
           "w-full md:w-96 lg:w-[420px]",
           // 移动端：只显示列表或详情
           mobileView === "detail" && "hidden md:flex"
@@ -725,7 +725,7 @@ export default function Home() {
       {/* ===== 右侧邮件详情面板 ===== */}
       <div
         className={cn(
-          "flex flex-1 flex-col bg-background",
+          "flex min-w-0 flex-1 flex-col bg-background",
           "hidden md:flex",
           // 移动端：只显示详情
           mobileView === "detail" && "flex md:flex"
@@ -780,7 +780,7 @@ export default function Home() {
             </div>
 
             {/* 详情内容 */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
               {/* 发件人信息 */}
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
@@ -1021,12 +1021,12 @@ export default function Home() {
         return (
           <div
             style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-            className="bg-black/50 p-2 md:p-8"
+            className="bg-black/50 p-2 md:p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) closeCompose();
             }}
           >
-            <div className="h-full w-full max-w-2xl overflow-hidden rounded-xl border border-gray-300 bg-white shadow-2xl md:h-auto md:max-h-[80vh]">
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-gray-300 bg-white shadow-2xl md:h-auto md:max-h-[85vh] md:max-w-2xl">
               <ComposeForm
                 mode={composeMode}
                 originalEmail={composeData}
